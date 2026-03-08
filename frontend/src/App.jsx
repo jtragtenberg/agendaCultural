@@ -9,6 +9,7 @@ import PaginaLocal from './paginas/PaginaLocal';
 import PaginaArtista from './paginas/PaginaArtista';
 import BuscarEventos from './paginas/BuscarEventos';
 import ModeracaoEventos from './paginas/ModeracaoEventos';
+import AdminUsuarios from './paginas/AdminUsuarios';
 
 const chaveSessao = 'agenda-cultural-recife:sessao';
 
@@ -37,18 +38,25 @@ export default function App() {
 
   const token = useMemo(() => sessao?.token, [sessao]);
   const ehModerador = useMemo(
-    () => Boolean(sessao?.usuario?.verificado || Number(sessao?.usuario?.reputacao || 0) >= 200),
+    () => ['moderador', 'administrador'].includes(sessao?.usuario?.funcao),
     [sessao]
   );
+  const ehAdministrador = useMemo(() => sessao?.usuario?.funcao === 'administrador', [sessao]);
 
   return (
     <>
-      <Cabecalho usuario={sessao?.usuario} onSair={sair} ehModerador={ehModerador} />
+      <Cabecalho
+        usuario={sessao?.usuario}
+        onSair={sair}
+        ehModerador={ehModerador}
+        ehAdministrador={ehAdministrador}
+      />
 
       <Routes>
         <Route path="/" element={token ? <Inicio token={token} /> : <BuscarEventos token={token} />} />
         <Route path="/buscar-eventos" element={<BuscarEventos token={token} />} />
         <Route path="/moderacao" element={<ModeracaoEventos token={token} ehModerador={ehModerador} />} />
+        <Route path="/admin" element={<AdminUsuarios token={token} ehAdministrador={ehAdministrador} />} />
         <Route path="/evento/:id" element={<PaginaEvento token={token} />} />
         <Route path="/locais/:id" element={<PaginaLocal token={token} />} />
         <Route path="/artistas/:id" element={<PaginaArtista token={token} />} />
