@@ -151,7 +151,15 @@ rotas.delete('/:id', autenticarObrigatorio, async (req, res) => {
       return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
     }
 
-    await prisma.evento.delete({ where: { id: req.params.id } });
+    const eventoId = req.params.id;
+
+    await prisma.$transaction([
+      prisma.agendaEvento.deleteMany({ where: { eventoId } }),
+      prisma.eventoArtista.deleteMany({ where: { eventoId } }),
+      prisma.denunciaEvento.deleteMany({ where: { eventoId } }),
+      prisma.evento.delete({ where: { id: eventoId } })
+    ]);
+
     return res.status(204).send();
   } catch (erro) {
     if (erro.code === 'P2025') {
