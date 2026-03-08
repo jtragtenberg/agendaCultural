@@ -22,6 +22,11 @@ function chaveData(ano, mes, dia) {
   return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
+function dataParaChave(dataEntrada) {
+  const data = new Date(dataEntrada);
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+}
+
 function dataInicial(agenda) {
   const primeiroEvento = agenda?.agendaPropria?.[0]?.evento?.data;
   if (!primeiroEvento) {
@@ -36,12 +41,13 @@ function dataInicial(agenda) {
 export default function CalendarioAgenda({ agenda }) {
   const inicial = dataInicial(agenda);
   const [referencia, setReferencia] = useState(new Date(inicial.ano, inicial.mes, 1));
+  const hojeChave = dataParaChave(new Date());
 
   const eventosPorDia = useMemo(() => {
     const mapa = new Map();
 
     agenda.agendaPropria.forEach((item) => {
-      const chave = item.evento.data.slice(0, 10);
+      const chave = dataParaChave(item.evento.data);
       const atual = mapa.get(chave) || [];
       atual.push({
         id: item.id,
@@ -96,13 +102,17 @@ export default function CalendarioAgenda({ agenda }) {
 
           const chave = chaveData(ano, mes, dia);
           const eventosDia = eventosPorDia.get(chave) || [];
+          const ehHoje = chave === hojeChave;
 
           return (
-            <div key={chave} className="calendario-celula">
+            <div key={chave} className={`calendario-celula${ehHoje ? ' calendario-celula-hoje' : ''}`}>
               <div className="calendario-numero">{dia}</div>
               <div className="calendario-eventos-dia">
                 {eventosDia.map((evento) => (
-                  <article key={evento.id} className="evento-mini">
+                  <article
+                    key={evento.id}
+                    className={`evento-mini${chave < hojeChave ? ' evento-passado' : ''}`}
+                  >
                     <p className="evento-mini-titulo">
                       <Link to={`/evento/${evento.eventoId}`}>{evento.titulo}</Link>
                     </p>

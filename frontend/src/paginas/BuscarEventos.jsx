@@ -23,6 +23,11 @@ function chaveData(ano, mes, dia) {
   return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
+function dataParaChave(dataEntrada) {
+  const data = new Date(dataEntrada);
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+}
+
 export default function BuscarEventos({ token }) {
   const [eventos, setEventos] = useState([]);
   const [idsMinhaAgenda, setIdsMinhaAgenda] = useState(new Set());
@@ -33,6 +38,7 @@ export default function BuscarEventos({ token }) {
     const hoje = new Date();
     return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
   });
+  const hojeChave = dataParaChave(new Date());
 
   useEffect(() => {
     api
@@ -70,7 +76,7 @@ export default function BuscarEventos({ token }) {
     const mapa = new Map();
 
     filtrados.forEach((evento) => {
-      const chave = evento.data.slice(0, 10);
+      const chave = dataParaChave(evento.data);
       const atual = mapa.get(chave) || [];
       atual.push(evento);
       mapa.set(chave, atual);
@@ -136,13 +142,17 @@ export default function BuscarEventos({ token }) {
 
             const chave = chaveData(ano, mes, dia);
             const eventosDia = eventosPorDia.get(chave) || [];
+            const ehHoje = chave === hojeChave;
 
             return (
-              <div key={chave} className="calendario-celula">
+              <div key={chave} className={`calendario-celula${ehHoje ? ' calendario-celula-hoje' : ''}`}>
                 <div className="calendario-numero">{dia}</div>
                 <div className="calendario-eventos-dia">
                   {eventosDia.map((evento) => (
-                    <article key={evento.id} className="evento-mini">
+                    <article
+                      key={evento.id}
+                      className={`evento-mini${dataParaChave(evento.data) < hojeChave ? ' evento-passado' : ''}`}
+                    >
                       <p className="evento-mini-titulo">
                         <Link to={`/evento/${evento.id}`}>{evento.titulo}</Link>
                       </p>

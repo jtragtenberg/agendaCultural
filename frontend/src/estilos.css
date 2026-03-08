@@ -335,6 +335,11 @@ button:disabled {
   background: rgba(186, 176, 245, 0.16);
 }
 
+.calendario-celula-hoje {
+  background: linear-gradient(165deg, rgba(224, 245, 226, 0.96) 0%, rgba(200, 231, 204, 0.9) 100%);
+  border-color: rgba(49, 126, 80, 0.72);
+}
+
 .calendario-numero {
   font-weight: 700;
   color: #102132;
@@ -362,6 +367,11 @@ button:disabled {
 
 .evento-mini p {
   margin: 0;
+}
+
+.evento-passado {
+  filter: grayscale(1);
+  opacity: 0.72;
 }
 
 .evento-mini-titulo {
