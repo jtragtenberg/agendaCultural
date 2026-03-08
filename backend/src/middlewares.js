@@ -14,7 +14,7 @@ async function autenticarObrigatorio(req, res, next) {
     const payload = jwt.verify(token, segredoJwt);
     const usuario = await prisma.usuario.findUnique({
       where: { id: payload.id },
-      select: { id: true, email: true, nome: true }
+      select: { id: true, email: true, nome: true, funcao: true, reputacao: true, verificado: true }
     });
 
     if (!usuario) {
@@ -28,7 +28,7 @@ async function autenticarObrigatorio(req, res, next) {
   }
 }
 
-function autenticarOpcional(req, _res, next) {
+async function autenticarOpcional(req, _res, next) {
   const cabecalho = req.headers.authorization;
   if (!cabecalho || !cabecalho.startsWith('Bearer ')) {
     return next();
@@ -36,11 +36,23 @@ function autenticarOpcional(req, _res, next) {
 
   const token = cabecalho.replace('Bearer ', '');
   try {
-    req.usuario = jwt.verify(token, segredoJwt);
+    const payload = jwt.verify(token, segredoJwt);
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: payload.id },
+      select: { id: true, email: true, nome: true, funcao: true, reputacao: true, verificado: true }
+    });
+    req.usuario = usuario || null;
   } catch (_erro) {
     req.usuario = null;
   }
   return next();
 }
 
-module.exports = { autenticarObrigatorio, autenticarOpcional };
+function autorizarAdministrador(req, res, next) {
+  if (req.usuario?.funcao !== 'administrador') {
+    return res.status(403).json({ erro: 'Ação permitida apenas para administrador.' });
+  }
+  return next();
+}
+
+module.exports = { autenticarObrigatorio, autenticarOpcional, autorizarAdministrador };
