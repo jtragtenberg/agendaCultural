@@ -198,6 +198,9 @@ export default function ModeracaoEventos({ token, ehModerador }) {
                 <strong>Status:</strong> {evento.status}
               </p>
               <p>
+                <strong>Denúncias:</strong> {evento._count?.denuncias || 0}
+              </p>
+              <p>
                 <strong>Criado por:</strong> {evento.criador?.nome}
               </p>
               <p>
@@ -228,6 +231,19 @@ export default function ModeracaoEventos({ token, ehModerador }) {
                 </button>
                 <button onClick={() => apagarEvento(evento.id)}>Apagar</button>
               </div>
+
+              {evento.denuncias?.length ? (
+                <section className="moderacao-denuncias">
+                  <strong>Últimas denúncias</strong>
+                  <ul>
+                    {evento.denuncias.map((denuncia) => (
+                      <li key={denuncia.id}>
+                        {denuncia.denunciante?.nome || 'Usuário'}: {denuncia.motivo}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
 
               {editandoEventoId === evento.id ? (
                 <section className="formulario moderacao-form">

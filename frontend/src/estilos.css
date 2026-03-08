@@ -458,6 +458,19 @@ button:disabled {
   box-shadow: 0 10px 18px rgba(116, 29, 85, 0.28);
 }
 
+.moderacao-denuncias {
+  margin-top: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(178, 45, 127, 0.24);
+  border-radius: 10px;
+  background: rgba(255, 240, 250, 0.75);
+}
+
+.moderacao-denuncias ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1rem;
+}
+
 @media (max-width: 900px) {
   .calendario-grade {
     grid-template-columns: repeat(1, minmax(0, 1fr));
