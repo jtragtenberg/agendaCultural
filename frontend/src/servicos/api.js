@@ -111,6 +111,31 @@ export const api = {
       headers: cabecalhos(token),
       body: JSON.stringify({ motivo })
     }),
+  listarEventosNaoModerados: (token) =>
+    requisicao('/eventos/moderacao/nao-moderados', {
+      headers: cabecalhos(token)
+    }),
+  aprovarEvento: (id, token) =>
+    requisicao(`/eventos/${id}/aprovar`, {
+      method: 'POST',
+      headers: cabecalhos(token)
+    }),
+  rejeitarEvento: (id, token) =>
+    requisicao(`/eventos/${id}/rejeitar`, {
+      method: 'POST',
+      headers: cabecalhos(token)
+    }),
+  editarEventoModeracao: (id, dados, token) =>
+    requisicao(`/eventos/${id}/editar`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+  apagarEventoModeracao: (id, token) =>
+    requisicao(`/eventos/${id}`, {
+      method: 'DELETE',
+      headers: cabecalhos(token)
+    }),
 
   seguirUsuario: (usuarioId, token) =>
     requisicao(`/seguir/${usuarioId}`, {
