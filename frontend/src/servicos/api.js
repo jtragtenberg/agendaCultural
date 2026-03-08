@@ -16,6 +16,7 @@ async function requisicao(caminho, opcoes = {}) {
     throw new Error(erro.erro || 'Erro na requisição');
   }
 
+  if (resposta.status === 204) return null;
   if (isIcs) return resposta.text();
   return resposta.json();
 }
