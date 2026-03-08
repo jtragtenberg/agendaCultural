@@ -8,4 +8,4 @@ COPY prisma ./prisma
 COPY src ./src
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma generate && npx prisma db push && npm run prisma:seed && npm run start"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma db push --force-reset && npm run prisma:seed && npm run start"]
