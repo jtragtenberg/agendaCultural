@@ -162,6 +162,8 @@ Na raiz do projeto:
 docker compose up --build
 ```
 
+Observação: no ambiente Docker de desenvolvimento, o backend aplica `prisma db push --force-reset` ao subir, recriando o schema e reseedando os dados.
+
 Serviços:
 
 - Frontend: `http://localhost:5173`
