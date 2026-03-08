@@ -41,7 +41,7 @@ export default function App() {
       <Cabecalho usuario={sessao?.usuario} onSair={sair} />
 
       <Routes>
-        <Route path="/" element={<Inicio token={token} />} />
+        <Route path="/" element={token ? <Inicio token={token} /> : <BuscarEventos token={token} />} />
         <Route path="/buscar-eventos" element={<BuscarEventos token={token} />} />
         <Route path="/evento/:id" element={<PaginaEvento token={token} />} />
         <Route path="/locais/:id" element={<PaginaLocal token={token} />} />
