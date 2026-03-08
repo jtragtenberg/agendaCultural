@@ -12,6 +12,7 @@ const rotasSeguidores = require('./modulos/seguidores/rotas');
 const rotasModeracao = require('./modulos/moderacao/rotas');
 const rotasUsuarios = require('./modulos/usuarios/rotas');
 const rotasCalendario = require('./modulos/calendario/rotas');
+const rotasAdmin = require('./modulos/admin/rotas');
 
 const app = express();
 app.use(cors());
@@ -28,6 +29,7 @@ app.use('/', rotasSeguidores);
 app.use('/eventos', rotasModeracao);
 app.use('/usuarios', rotasCalendario);
 app.use('/usuarios', rotasUsuarios);
+app.use('/admin', rotasAdmin);
 
 app.use((erro, _req, res, _next) => {
   console.error(erro);
