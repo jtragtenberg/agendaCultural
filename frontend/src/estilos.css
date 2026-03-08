@@ -1,22 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
 
 :root {
-  --fundo-1: #f1edff;
-  --fundo-2: #e6ebff;
-  --fundo-3: #ebe3ff;
-  --texto: #1f1d44;
-  --texto-fraco: #504a8a;
-  --primaria: #4b4bf2;
-  --primaria-escura: #3535c7;
-  --primaria-clara: rgba(75, 75, 242, 0.18);
-  --borda: #b8b3e6;
-  --superficie: #f7f4ff;
-  --superficie-2: #f0edff;
-  --erro: #9f255f;
-  --sucesso: #3f3cb4;
-  --sombra: 0 10px 24px rgba(55, 45, 120, 0.14);
-  font-family: 'IBM Plex Mono', 'Courier New', monospace;
-  color: var(--texto);
+  --papel: #efe9dd;
+  --papel-escuro: #d7ccb8;
+  --tinta: #141012;
+  --tinta-fraca: #4f4649;
+  --azul: #2f45d7;
+  --roxo: #8b2de2;
+  --magenta: #c22878;
+  --verde: #1f7a66;
+  --borda: #1a1216;
+  --sombra: 0 8px 0 rgba(22, 16, 18, 0.26);
 }
 
 * {
@@ -26,26 +20,36 @@
 body {
   margin: 0;
   min-height: 100vh;
+  color: var(--tinta);
+  font-family: 'Space Grotesk', sans-serif;
   background:
-    radial-gradient(circle at 10% 8%, rgba(103, 96, 255, 0.16) 0, transparent 38%),
-    radial-gradient(circle at 90% 0%, rgba(155, 98, 255, 0.14) 0, transparent 40%),
-    linear-gradient(135deg, var(--fundo-1) 0%, var(--fundo-2) 55%, var(--fundo-3) 100%),
+    radial-gradient(circle at 20% 10%, rgba(139, 45, 226, 0.18), transparent 30%),
+    radial-gradient(circle at 85% 15%, rgba(47, 69, 215, 0.2), transparent 36%),
+    linear-gradient(140deg, #f5efe2 0%, #e8ddcb 60%, #e1d2bf 100%);
+  position: relative;
+}
+
+body::before {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background:
     repeating-linear-gradient(
       0deg,
-      rgba(64, 58, 129, 0.03) 0px,
-      rgba(64, 58, 129, 0.03) 1px,
+      rgba(10, 6, 8, 0.05) 0px,
+      rgba(10, 6, 8, 0.05) 1px,
       transparent 1px,
       transparent 3px
-    );
+    ),
+    radial-gradient(rgba(0, 0, 0, 0.1) 0.7px, transparent 0.7px);
+  background-size: auto, 3px 3px;
+  mix-blend-mode: multiply;
+  opacity: 0.35;
 }
 
 a {
-  color: var(--primaria);
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
+  color: var(--azul);
 }
 
 button,
@@ -59,39 +63,49 @@ input,
 select,
 textarea {
   width: 100%;
-  border: 1px solid var(--borda);
-  border-radius: 10px;
+  border: 2px solid var(--borda);
+  border-radius: 0;
+  background: rgba(255, 252, 245, 0.95);
+  color: var(--tinta);
   padding: 0.62rem 0.74rem;
-  background: #fff;
-  color: var(--texto);
+  box-shadow: 2px 2px 0 rgba(20, 16, 18, 0.15);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid rgba(10, 111, 120, 0.2);
-  border-color: var(--primaria);
+  outline: 2px dashed var(--magenta);
+  outline-offset: 1px;
 }
 
 .cabecalho {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 8;
   display: flex;
   gap: 1rem;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background: linear-gradient(120deg, #3535c7 0%, #4b4bf2 62%, #6f54f4 100%);
-  color: #fff;
   flex-wrap: wrap;
-  box-shadow: 0 8px 18px rgba(50, 43, 126, 0.35);
+  padding: 0.9rem 1.2rem;
+  background:
+    linear-gradient(120deg, rgba(47, 69, 215, 0.95) 0%, rgba(139, 45, 226, 0.92) 100%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.14) 0px,
+      rgba(255, 255, 255, 0.14) 2px,
+      transparent 2px,
+      transparent 7px
+    );
+  border-bottom: 3px solid var(--borda);
+  box-shadow: 0 5px 0 rgba(20, 16, 18, 0.35);
 }
 
 .cabecalho h1 {
   margin: 0;
-  font-size: 1.3rem;
-  letter-spacing: 0.01em;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .cabecalho h1 a {
@@ -99,101 +113,98 @@ textarea:focus {
   text-decoration: none;
 }
 
-.cabecalho h1 a:hover {
-  text-decoration: none;
-  opacity: 0.9;
-}
-
 .cabecalho nav {
   display: flex;
-  gap: 0.8rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
-.cabecalho nav a {
+.cabecalho nav a,
+.acoes-auth a {
   color: #fff;
   text-decoration: none;
-  padding: 0.32rem 0.5rem;
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  padding: 0.34rem 0.58rem;
+  text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
 }
 
-.cabecalho nav a:hover {
-  background: rgba(255, 255, 255, 0.14);
+.cabecalho nav a:hover,
+.acoes-auth a:hover {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .acoes-auth {
   display: flex;
-  gap: 0.55rem;
+  gap: 0.5rem;
   align-items: center;
-  flex-wrap: wrap;
-}
-
-.acoes-auth a {
-  border: 1px solid rgba(103, 96, 255, 0.45);
-  border-radius: 999px;
-  padding: 0.58rem 0.82rem;
-  background: linear-gradient(140deg, rgba(75, 75, 242, 0.9) 0%, rgba(114, 84, 244, 0.82) 100%);
-  color: #f8f7ff;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  box-shadow: 0 8px 16px rgba(76, 68, 176, 0.24);
-  text-decoration: none;
-}
-
-.acoes-auth a:hover {
-  background: linear-gradient(140deg, rgba(64, 64, 219, 0.94) 0%, rgba(100, 75, 222, 0.88) 100%);
-  box-shadow: 0 12px 20px rgba(74, 66, 170, 0.28);
-  text-decoration: none;
+  color: #fff;
 }
 
 .container {
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 1.2rem;
+  padding: 1.1rem;
 }
 
 .container > h2 {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.45rem;
+  font-size: clamp(1.3rem, 2.2vw, 2rem);
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .container > p {
-  color: var(--texto-fraco);
-}
-
-.lista-eventos {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  color: var(--tinta-fraca);
 }
 
 .card-evento,
 .formulario,
 .formulario-auth,
 .calendario-agenda,
-.janela-mini {
+.janela-mini,
+.painel-moderacao,
+.painel-admin {
   background:
-    linear-gradient(165deg, rgba(247, 244, 255, 0.94) 0%, rgba(239, 235, 255, 0.88) 100%),
+    linear-gradient(170deg, rgba(255, 249, 238, 0.95) 0%, rgba(246, 236, 219, 0.9) 100%),
     repeating-linear-gradient(
       90deg,
-      rgba(57, 48, 133, 0.04) 0px,
-      rgba(57, 48, 133, 0.04) 1px,
+      rgba(45, 36, 39, 0.06) 0px,
+      rgba(45, 36, 39, 0.06) 1px,
       transparent 1px,
       transparent 5px
     );
-  border-radius: 16px;
-  border: 1px solid rgba(122, 113, 201, 0.5);
+  border: 2px solid var(--borda);
+  border-radius: 0;
   box-shadow: var(--sombra);
+  position: relative;
+}
+
+.card-evento::after,
+.formulario::after,
+.formulario-auth::after,
+.calendario-agenda::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(20, 16, 18, 0.18);
+}
+
+.lista-eventos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.95rem;
 }
 
 .card-evento {
-  padding: 1rem;
-}
-
-.acoes-card {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-top: 0.7rem;
+  padding: 0.95rem;
 }
 
 .formulario,
@@ -207,97 +218,93 @@ textarea:focus {
 .formulario-auth label,
 .campo-autocomplete {
   display: grid;
-  gap: 0.35rem;
-}
-
-fieldset {
-  border: 1px solid var(--borda);
-  border-radius: 10px;
-  background: #fff;
-}
-
-.lista-artistas {
-  display: grid;
   gap: 0.3rem;
 }
 
+fieldset {
+  border: 2px dashed #4c4252;
+  border-radius: 0;
+  padding: 0.55rem;
+}
+
 button {
-  border: 1px solid rgba(103, 96, 255, 0.45);
-  border-radius: 999px;
-  padding: 0.58rem 0.82rem;
-  background: linear-gradient(140deg, rgba(75, 75, 242, 0.9) 0%, rgba(114, 84, 244, 0.82) 100%);
-  color: #f8f7ff;
-  font-weight: 500;
-  letter-spacing: 0.01em;
+  border: 2px solid var(--borda);
+  border-radius: 0;
+  padding: 0.52rem 0.74rem;
+  background:
+    linear-gradient(120deg, rgba(47, 69, 215, 0.92) 0%, rgba(139, 45, 226, 0.92) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.14) 0px,
+      rgba(255, 255, 255, 0.14) 2px,
+      transparent 2px,
+      transparent 6px
+    );
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: transform 0.14s ease, background-color 0.2s ease, box-shadow 0.22s ease;
-  box-shadow: 0 8px 16px rgba(76, 68, 176, 0.24);
+  box-shadow: 2px 2px 0 rgba(20, 16, 18, 0.35);
+  transition: transform 0.12s ease;
 }
 
 button:hover {
-  background: linear-gradient(140deg, rgba(64, 64, 219, 0.94) 0%, rgba(100, 75, 222, 0.88) 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 20px rgba(74, 66, 170, 0.28);
+  transform: translate(-1px, -1px);
 }
 
 button:disabled {
-  opacity: 0.62;
+  opacity: 0.55;
   cursor: not-allowed;
-  transform: none;
 }
 
 .link-botao {
-  margin-top: 0.5rem;
-  background: rgba(116, 101, 237, 0.12);
-  color: #2c2675;
-  border-color: rgba(116, 101, 237, 0.34);
-  box-shadow: none;
+  background:
+    linear-gradient(120deg, rgba(178, 40, 120, 0.9) 0%, rgba(129, 38, 130, 0.9) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.14) 0px,
+      rgba(255, 255, 255, 0.14) 2px,
+      transparent 2px,
+      transparent 6px
+    );
 }
 
-.erro {
-  color: var(--erro);
-  font-weight: 600;
-}
-
-.sucesso {
-  color: var(--sucesso);
-  font-weight: 600;
-}
-
-.bloco-denuncia,
-.bloco-edicao-publica,
-.bloco-inline,
-.lista-sugestoes {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.bloco-denuncia,
-.bloco-edicao-publica {
-  margin-top: 1rem;
-}
-
+.acoes-card,
 .acoes-perfil {
   display: flex;
   gap: 0.5rem;
-  margin: 1rem 0;
   flex-wrap: wrap;
 }
 
+.erro {
+  color: #8f1f4e;
+  font-weight: 700;
+}
+
+.sucesso {
+  color: var(--verde);
+  font-weight: 700;
+}
+
 .calendario-agenda {
-  padding: 1rem;
+  padding: 0.95rem;
 }
 
 .calendario-topo {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.8rem;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
 }
 
 .calendario-topo h3 {
   margin: 0;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
 }
 
 .calendario-grade {
@@ -306,58 +313,62 @@ button:disabled {
 }
 
 .calendario-semana {
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.35rem;
 }
 
 .calendario-dia-semana {
   text-align: center;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #3a4f64;
-  font-size: 0.85rem;
+  text-transform: uppercase;
 }
 
 .calendario-dias {
-  gap: 0.45rem;
-}
-
-.calendario-celula {
-  min-height: 140px;
-  background: linear-gradient(165deg, rgba(245, 241, 255, 0.92) 0%, rgba(236, 231, 255, 0.84) 100%);
-  border: 1px solid rgba(136, 126, 214, 0.42);
-  border-radius: 10px;
-  padding: 0.45rem;
-  display: flex;
-  flex-direction: column;
   gap: 0.38rem;
 }
 
+.calendario-celula {
+  min-height: 145px;
+  background:
+    linear-gradient(165deg, rgba(255, 248, 236, 0.92) 0%, rgba(238, 226, 210, 0.9) 100%),
+    radial-gradient(rgba(0, 0, 0, 0.1) 0.7px, transparent 0.7px);
+  background-size: auto, 3px 3px;
+  border: 2px solid rgba(25, 18, 22, 0.72);
+  padding: 0.38rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
 .calendario-celula-vazia {
-  background: rgba(186, 176, 245, 0.16);
+  background: rgba(215, 204, 184, 0.35);
+  border-style: dashed;
 }
 
 .calendario-numero {
   font-weight: 700;
-  color: #102132;
+  font-family: 'IBM Plex Mono', monospace;
 }
 
 .calendario-eventos-dia {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
 .evento-mini {
-  background: linear-gradient(155deg, rgba(233, 228, 255, 0.9) 0%, rgba(223, 216, 255, 0.82) 100%);
-  border: 1px solid rgba(103, 96, 255, 0.28);
-  border-left: 2px solid rgba(75, 75, 242, 0.8);
-  border-radius: 8px;
-  padding: 0.42rem;
+  background:
+    linear-gradient(150deg, rgba(210, 217, 255, 0.92) 0%, rgba(238, 207, 251, 0.86) 100%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.05) 0px,
+      rgba(0, 0, 0, 0.05) 2px,
+      transparent 2px,
+      transparent 5px
+    );
+  border: 1.7px solid rgba(31, 17, 40, 0.7);
+  border-left: 4px solid var(--magenta);
+  padding: 0.36rem;
   font-size: 0.76rem;
-}
-
-.evento-mini-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
 }
 
 .evento-mini p {
@@ -366,125 +377,98 @@ button:disabled {
 
 .evento-mini-titulo {
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .lista-sugestoes {
   margin: 0;
-  padding: 0.28rem;
+  padding: 0.25rem;
   list-style: none;
-  border: 1px solid var(--borda);
-  border-radius: 10px;
-  background: #fff;
+  border: 2px solid var(--borda);
+  background: rgba(250, 243, 231, 0.96);
 }
 
 .lista-sugestoes button {
   width: 100%;
   text-align: left;
-  background: rgba(235, 229, 255, 0.78);
-  color: #2f2a71;
-  box-shadow: none;
-  border-radius: 10px;
+  margin-bottom: 0.2rem;
+}
+
+.bloco-inline,
+.bloco-denuncia,
+.bloco-edicao-publica,
+.moderacao-denuncias {
+  display: grid;
+  gap: 0.45rem;
 }
 
 .bloco-inline {
-  padding: 0.7rem;
-  border-radius: 10px;
-  border: 1px dashed #8c7de0;
-  background: #f2edff;
+  padding: 0.55rem;
+  border: 2px dashed #6b5f72;
+  background: rgba(250, 242, 255, 0.82);
 }
 
 .tags-selecionadas {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.36rem;
 }
 
 .tags-selecionadas span {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  background: #e7ddff;
-  color: #2c2674;
-  border-radius: 999px;
-  padding: 0.2rem 0.55rem;
-  font-size: 0.84rem;
+  gap: 0.34rem;
+  background: rgba(218, 215, 255, 0.92);
+  border: 1.6px solid var(--borda);
+  padding: 0.15rem 0.5rem;
+  font-size: 0.8rem;
 }
 
 .tags-selecionadas span button {
-  padding: 0.1rem 0.35rem;
-  border-radius: 999px;
-  background: #4b4bf2;
+  padding: 0.08rem 0.28rem;
 }
 
 .painel-moderacao {
-  --mod-fundo-a: #fbe9f5;
-  --mod-fundo-b: #f1dcf2;
-  --mod-card-a: #fff2fb;
-  --mod-card-b: #fbe6f6;
-  --mod-borda: #d9a7cf;
-  --mod-ink: #5f1f54;
-  --mod-btn-a: #b22d7f;
-  --mod-btn-b: #8a2467;
-  --mod-btn-hover-a: #9d266f;
-  --mod-btn-hover-b: #741d55;
-  background: linear-gradient(135deg, var(--mod-fundo-a) 0%, var(--mod-fundo-b) 100%);
-  border-radius: 18px;
-  border: 1px solid var(--mod-borda);
-  padding: 1rem;
-}
-
-.painel-moderacao h2,
-.painel-moderacao h3,
-.painel-moderacao p,
-.painel-moderacao strong {
-  color: var(--mod-ink);
-}
-
-.painel-moderacao .moderacao-card,
-.painel-moderacao .moderacao-form {
-  background: linear-gradient(165deg, var(--mod-card-a) 0%, var(--mod-card-b) 100%);
-  border: 1px solid var(--mod-borda);
+  background:
+    linear-gradient(130deg, rgba(255, 227, 242, 0.88) 0%, rgba(246, 207, 234, 0.9) 100%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(93, 20, 60, 0.08) 0px,
+      rgba(93, 20, 60, 0.08) 2px,
+      transparent 2px,
+      transparent 7px
+    );
+  border-color: #5d143c;
 }
 
 .painel-moderacao button {
-  border-color: rgba(178, 45, 127, 0.35);
-  background: linear-gradient(140deg, var(--mod-btn-a) 0%, var(--mod-btn-b) 100%);
-  box-shadow: 0 8px 16px rgba(138, 36, 103, 0.24);
-}
-
-.painel-moderacao button:hover {
-  background: linear-gradient(140deg, var(--mod-btn-hover-a) 0%, var(--mod-btn-hover-b) 100%);
-  box-shadow: 0 10px 18px rgba(116, 29, 85, 0.28);
-}
-
-.moderacao-denuncias {
-  margin-top: 0.6rem;
-  padding: 0.55rem 0.65rem;
-  border: 1px solid rgba(178, 45, 127, 0.24);
-  border-radius: 10px;
-  background: rgba(255, 240, 250, 0.75);
-}
-
-.moderacao-denuncias ul {
-  margin: 0.4rem 0 0;
-  padding-left: 1rem;
+  background:
+    linear-gradient(120deg, rgba(178, 31, 92, 0.95) 0%, rgba(132, 32, 91, 0.95) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.13) 0px,
+      rgba(255, 255, 255, 0.13) 2px,
+      transparent 2px,
+      transparent 6px
+    );
 }
 
 .painel-admin {
-  background: linear-gradient(135deg, rgba(232, 244, 255, 0.82) 0%, rgba(243, 240, 255, 0.76) 100%);
-  border-radius: 18px;
-  border: 1px solid rgba(107, 133, 210, 0.35);
-  padding: 1rem;
-}
-
-.admin-card {
-  border-color: rgba(107, 133, 210, 0.35);
+  background:
+    linear-gradient(130deg, rgba(229, 235, 255, 0.9) 0%, rgba(214, 221, 255, 0.86) 100%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(34, 49, 123, 0.08) 0px,
+      rgba(34, 49, 123, 0.08) 2px,
+      transparent 2px,
+      transparent 7px
+    );
+  border-color: #22317b;
 }
 
 @media (max-width: 900px) {
   .calendario-grade {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .calendario-semana {
@@ -498,7 +482,7 @@ button:disabled {
 
 @media (max-width: 700px) {
   .cabecalho {
-    padding: 0.9rem;
+    padding: 0.8rem;
   }
 
   .cabecalho nav {
@@ -506,6 +490,6 @@ button:disabled {
   }
 
   .container {
-    padding: 0.9rem;
+    padding: 0.85rem;
   }
 }
