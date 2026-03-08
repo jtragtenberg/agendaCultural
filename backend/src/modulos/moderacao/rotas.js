@@ -169,4 +169,140 @@ rotas.delete('/:id', autenticarObrigatorio, async (req, res) => {
   }
 });
 
+rotas.get('/moderacao/locais', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const locais = await prisma.local.findMany({
+      include: {
+        criador: { select: { id: true, nome: true, email: true } },
+        _count: { select: { eventos: true } }
+      },
+      orderBy: { criadoEm: 'desc' }
+    });
+
+    return res.json(locais);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao listar locais para moderação.' });
+  }
+});
+
+rotas.put('/moderacao/locais/:id', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const atualizado = await prisma.local.update({
+      where: { id: req.params.id },
+      data: {
+        nome: req.body.nome,
+        endereco: req.body.endereco,
+        bairro: req.body.bairro,
+        cidade: req.body.cidade,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude
+      }
+    });
+
+    return res.json(atualizado);
+  } catch (erro) {
+    if (erro.code === 'P2025') {
+      return res.status(404).json({ erro: 'Local não encontrado.' });
+    }
+    return res.status(500).json({ erro: 'Falha ao editar local.' });
+  }
+});
+
+rotas.delete('/moderacao/locais/:id', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const localId = req.params.id;
+    const eventoRelacionado = await prisma.evento.findFirst({ where: { localId } });
+    if (eventoRelacionado) {
+      return res.status(400).json({ erro: 'Não é possível apagar local com eventos vinculados.' });
+    }
+
+    await prisma.local.delete({ where: { id: localId } });
+    return res.status(204).send();
+  } catch (erro) {
+    if (erro.code === 'P2025') {
+      return res.status(404).json({ erro: 'Local não encontrado.' });
+    }
+    return res.status(500).json({ erro: 'Falha ao apagar local.' });
+  }
+});
+
+rotas.get('/moderacao/artistas', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const artistas = await prisma.artista.findMany({
+      include: {
+        criador: { select: { id: true, nome: true, email: true } },
+        _count: { select: { eventoArtistas: true } }
+      },
+      orderBy: { criadoEm: 'desc' }
+    });
+
+    return res.json(artistas);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao listar artistas para moderação.' });
+  }
+});
+
+rotas.put('/moderacao/artistas/:id', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const atualizado = await prisma.artista.update({
+      where: { id: req.params.id },
+      data: {
+        nome: req.body.nome,
+        descricao: req.body.descricao,
+        instagram: req.body.instagram,
+        website: req.body.website
+      }
+    });
+
+    return res.json(atualizado);
+  } catch (erro) {
+    if (erro.code === 'P2025') {
+      return res.status(404).json({ erro: 'Artista não encontrado.' });
+    }
+    return res.status(500).json({ erro: 'Falha ao editar artista.' });
+  }
+});
+
+rotas.delete('/moderacao/artistas/:id', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const artistaId = req.params.id;
+    const vinculo = await prisma.eventoArtista.findFirst({ where: { artistaId } });
+    if (vinculo) {
+      return res.status(400).json({ erro: 'Não é possível apagar artista vinculado a eventos.' });
+    }
+
+    await prisma.artista.delete({ where: { id: artistaId } });
+    return res.status(204).send();
+  } catch (erro) {
+    if (erro.code === 'P2025') {
+      return res.status(404).json({ erro: 'Artista não encontrado.' });
+    }
+    return res.status(500).json({ erro: 'Falha ao apagar artista.' });
+  }
+});
+
 module.exports = rotas;
