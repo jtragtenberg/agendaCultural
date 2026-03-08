@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const nomesMeses = [
   'Janeiro',
@@ -44,6 +45,7 @@ export default function CalendarioAgenda({ agenda }) {
       const atual = mapa.get(chave) || [];
       atual.push({
         id: item.id,
+        eventoId: item.evento.id,
         titulo: item.evento.titulo,
         horaInicio: item.evento.horaInicio,
         local: item.evento.local.nome,
@@ -101,7 +103,9 @@ export default function CalendarioAgenda({ agenda }) {
               <div className="calendario-eventos-dia">
                 {eventosDia.map((evento) => (
                   <article key={evento.id} className="evento-mini">
-                    <p className="evento-mini-titulo">{evento.titulo}</p>
+                    <p className="evento-mini-titulo">
+                      <Link to={`/evento/${evento.eventoId}`}>{evento.titulo}</Link>
+                    </p>
                     <p>
                       {evento.horaInicio} - {evento.local}
                     </p>
