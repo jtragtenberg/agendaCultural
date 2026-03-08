@@ -90,6 +90,11 @@ export const api = {
       headers: cabecalhos(token),
       body: JSON.stringify({ eventoId })
     }),
+  removerAgenda: (eventoId, token) =>
+    requisicao(`/agenda/remover/${eventoId}`, {
+      method: 'DELETE',
+      headers: cabecalhos(token)
+    }),
 
   minhaAgenda: (token) => requisicao('/agenda/minha', { headers: cabecalhos(token) }),
 
