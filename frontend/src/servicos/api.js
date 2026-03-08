@@ -40,6 +40,12 @@ export const api = {
       headers: cabecalhos(),
       body: JSON.stringify(dados)
     }),
+  loginAdministrador: (dados) =>
+    requisicao('/autenticacao/login-administrador', {
+      method: 'POST',
+      headers: cabecalhos(),
+      body: JSON.stringify(dados)
+    }),
 
   listarEventos: (token) =>
     requisicao('/eventos', {
@@ -102,6 +108,20 @@ export const api = {
   meuPerfil: (id) => requisicao(`/usuarios/${id}`),
   listarUsuarios: (busca = '', token) =>
     requisicao(`/usuarios${queryBusca(busca)}`, {
+      headers: cabecalhos(token)
+    }),
+  listarUsuariosAdmin: (token) =>
+    requisicao('/admin/usuarios', {
+      headers: cabecalhos(token)
+    }),
+  atualizarFuncaoUsuario: (id, funcao, token) =>
+    requisicao(`/admin/usuarios/${id}/funcao`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify({ funcao })
+    }),
+  listarModeradoresAdmin: (token) =>
+    requisicao('/admin/moderadores', {
       headers: cabecalhos(token)
     }),
 
