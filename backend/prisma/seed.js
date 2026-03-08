@@ -22,7 +22,20 @@ async function main() {
       senhaHash,
       bio: 'Perfil oficial de moderação da Agenda Cultural do Recife.',
       reputacao: 300,
-      verificado: true
+      verificado: true,
+      funcao: 'moderador'
+    }
+  });
+
+  await prisma.usuario.create({
+    data: {
+      nome: 'Administrador Agenda',
+      email: 'admin@agenda.recife',
+      senhaHash,
+      bio: 'Administrador da plataforma.',
+      reputacao: 500,
+      verificado: true,
+      funcao: 'administrador'
     }
   });
 
@@ -33,7 +46,8 @@ async function main() {
       senhaHash,
       bio: 'Apaixonada por música pernambucana.',
       reputacao: 120,
-      verificado: true
+      verificado: true,
+      funcao: 'usuario'
     }
   });
 
@@ -43,7 +57,8 @@ async function main() {
       email: 'joao@agenda.recife',
       senhaHash,
       bio: 'Sempre em busca de shows independentes.',
-      reputacao: 20
+      reputacao: 20,
+      funcao: 'usuario'
     }
   });
 
@@ -175,6 +190,7 @@ async function main() {
 
   console.log('Seed concluído com sucesso.');
   console.log('Usuários de teste:');
+  console.log('admin@agenda.recife / 123456');
   console.log('moderador@agenda.recife / 123456');
   console.log('ana@agenda.recife / 123456');
   console.log('joao@agenda.recife / 123456');
