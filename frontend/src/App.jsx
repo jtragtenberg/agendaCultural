@@ -7,6 +7,8 @@ import CriarEvento from './paginas/CriarEvento';
 import Perfil from './paginas/Perfil';
 import PaginaLocal from './paginas/PaginaLocal';
 import PaginaArtista from './paginas/PaginaArtista';
+import BuscarEventos from './paginas/BuscarEventos';
+import BuscarAmigos from './paginas/BuscarAmigos';
 
 const chaveSessao = 'agenda-cultural-recife:sessao';
 
@@ -41,6 +43,8 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<Inicio token={token} />} />
+        <Route path="/buscar-eventos" element={<BuscarEventos token={token} />} />
+        <Route path="/buscar-amigos" element={<BuscarAmigos token={token} />} />
         <Route path="/evento/:id" element={<PaginaEvento token={token} />} />
         <Route path="/locais/:id" element={<PaginaLocal token={token} />} />
         <Route path="/artistas/:id" element={<PaginaArtista token={token} />} />
