@@ -10,9 +10,13 @@ export default function Cabecalho({ usuario, onSair }) {
       </div>
 
       <nav>
-        <Link to="/buscar-eventos">Buscar eventos</Link>
-        <Link to="/criar-evento">Criar evento</Link>
-        {usuario ? <Link to="/perfil">Meu perfil</Link> : null}
+        {usuario ? (
+          <>
+            <Link to="/buscar-eventos">Buscar eventos</Link>
+            <Link to="/criar-evento">Criar evento</Link>
+            <Link to="/perfil">Meu perfil</Link>
+          </>
+        ) : null}
       </nav>
 
       <div className="acoes-auth">
