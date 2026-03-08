@@ -417,6 +417,47 @@ button:disabled {
   background: #4b4bf2;
 }
 
+.painel-moderacao {
+  --mod-fundo-a: #fbe9f5;
+  --mod-fundo-b: #f1dcf2;
+  --mod-card-a: #fff2fb;
+  --mod-card-b: #fbe6f6;
+  --mod-borda: #d9a7cf;
+  --mod-ink: #5f1f54;
+  --mod-btn-a: #b22d7f;
+  --mod-btn-b: #8a2467;
+  --mod-btn-hover-a: #9d266f;
+  --mod-btn-hover-b: #741d55;
+  background: linear-gradient(135deg, var(--mod-fundo-a) 0%, var(--mod-fundo-b) 100%);
+  border-radius: 18px;
+  border: 1px solid var(--mod-borda);
+  padding: 1rem;
+}
+
+.painel-moderacao h2,
+.painel-moderacao h3,
+.painel-moderacao p,
+.painel-moderacao strong {
+  color: var(--mod-ink);
+}
+
+.painel-moderacao .moderacao-card,
+.painel-moderacao .moderacao-form {
+  background: linear-gradient(165deg, var(--mod-card-a) 0%, var(--mod-card-b) 100%);
+  border: 1px solid var(--mod-borda);
+}
+
+.painel-moderacao button {
+  border-color: rgba(178, 45, 127, 0.35);
+  background: linear-gradient(140deg, var(--mod-btn-a) 0%, var(--mod-btn-b) 100%);
+  box-shadow: 0 8px 16px rgba(138, 36, 103, 0.24);
+}
+
+.painel-moderacao button:hover {
+  background: linear-gradient(140deg, var(--mod-btn-hover-a) 0%, var(--mod-btn-hover-b) 100%);
+  box-shadow: 0 10px 18px rgba(116, 29, 85, 0.28);
+}
+
 @media (max-width: 900px) {
   .calendario-grade {
     grid-template-columns: repeat(1, minmax(0, 1fr));
