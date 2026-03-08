@@ -18,16 +18,42 @@ rotas.get('/moderacao/nao-moderados', autenticarObrigatorio, async (req, res) =>
 
     const eventos = await prisma.evento.findMany({
       where: {
-        status: {
-          in: ['pendente', 'sinalizado']
-        }
+        OR: [
+          {
+            status: {
+              in: ['pendente', 'sinalizado']
+            }
+          },
+          {
+            denuncias: {
+              some: {}
+            }
+          }
+        ]
       },
       include: {
         local: true,
         criador: { select: { id: true, nome: true, email: true } },
-        eventoArtistas: { include: { artista: true } }
+        eventoArtistas: { include: { artista: true } },
+        denuncias: {
+          select: {
+            id: true,
+            motivo: true,
+            criadoEm: true,
+            denunciante: {
+              select: { id: true, nome: true }
+            }
+          },
+          orderBy: { criadoEm: 'desc' },
+          take: 5
+        },
+        _count: {
+          select: {
+            denuncias: true
+          }
+        }
       },
-      orderBy: [{ data: 'asc' }, { criadoEm: 'asc' }]
+      orderBy: [{ criadoEm: 'desc' }]
     });
 
     return res.json(eventos);
