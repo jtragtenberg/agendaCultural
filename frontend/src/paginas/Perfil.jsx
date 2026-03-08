@@ -101,9 +101,7 @@ export default function Perfil({ sessao, onEntrar }) {
       {agenda ? (
         <section>
           <h3>Minha agenda em calendário</h3>
-          <p>
-            Visualização mensal com eventos salvos por você e também pelos perfis que você segue.
-          </p>
+          <p>Visualização mensal dos eventos que você salvou na sua agenda pessoal.</p>
           <CalendarioAgenda agenda={agenda} />
         </section>
       ) : null}

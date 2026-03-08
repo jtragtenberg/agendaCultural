@@ -52,19 +52,6 @@ export default function CalendarioAgenda({ agenda }) {
       mapa.set(chave, atual);
     });
 
-    agenda.agendaSeguindo.forEach((item) => {
-      const chave = item.evento.data.slice(0, 10);
-      const atual = mapa.get(chave) || [];
-      atual.push({
-        id: item.id,
-        titulo: item.evento.titulo,
-        horaInicio: item.evento.horaInicio,
-        local: item.evento.local.nome,
-        origem: item.usuario.nome
-      });
-      mapa.set(chave, atual);
-    });
-
     return mapa;
   }, [agenda]);
 
@@ -113,13 +100,10 @@ export default function CalendarioAgenda({ agenda }) {
               <div className="calendario-numero">{dia}</div>
               <div className="calendario-eventos-dia">
                 {eventosDia.map((evento) => (
-                  <article key={`${evento.origem}-${evento.id}`} className="evento-mini">
+                  <article key={evento.id} className="evento-mini">
                     <p className="evento-mini-titulo">{evento.titulo}</p>
                     <p>
                       {evento.horaInicio} - {evento.local}
-                    </p>
-                    <p className="evento-mini-origem">
-                      {evento.origem === 'minha' ? 'Minha agenda' : `Seguindo: ${evento.origem}`}
                     </p>
                   </article>
                 ))}
