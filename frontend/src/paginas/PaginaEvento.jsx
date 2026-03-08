@@ -9,6 +9,7 @@ export default function PaginaEvento({ token }) {
   const [mensagem, setMensagem] = useState('');
   const [motivo, setMotivo] = useState('');
   const [erro, setErro] = useState('');
+  const [jaNaAgenda, setJaNaAgenda] = useState(false);
 
   useEffect(() => {
     api
@@ -17,15 +18,35 @@ export default function PaginaEvento({ token }) {
       .catch((e) => setErro(e.message));
   }, [id]);
 
+  useEffect(() => {
+    if (!token) {
+      setJaNaAgenda(false);
+      return;
+    }
+
+    api
+      .minhaAgenda(token)
+      .then((dados) => {
+        const existe = dados.agendaPropria.some((item) => item.evento.id === id);
+        setJaNaAgenda(existe);
+      })
+      .catch(() => setJaNaAgenda(false));
+  }, [id, token]);
+
   async function adicionarAgenda() {
     if (!token) {
       setErro('Faça login para adicionar eventos na agenda.');
       return;
     }
 
+    if (jaNaAgenda) {
+      return;
+    }
+
     try {
       await api.adicionarAgenda(id, token);
       setMensagem('Evento adicionado à sua agenda.');
+      setJaNaAgenda(true);
     } catch (e) {
       setErro(e.message);
     }
@@ -74,7 +95,9 @@ export default function PaginaEvento({ token }) {
         ))}
       </ul>
 
-      <button onClick={adicionarAgenda}>Adicionar à minha agenda</button>
+      <button onClick={adicionarAgenda} disabled={jaNaAgenda}>
+        {jaNaAgenda ? 'Evento já está na minha agenda' : 'Adicionar à minha agenda'}
+      </button>
 
       <section className="bloco-denuncia">
         <h3>Denunciar evento</h3>
