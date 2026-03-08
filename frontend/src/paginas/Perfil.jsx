@@ -4,6 +4,7 @@ import CalendarioAgenda from '../componentes/CalendarioAgenda';
 
 export default function Perfil({ sessao, onEntrar }) {
   const [modoCadastro, setModoCadastro] = useState(false);
+  const [modoAdmin, setModoAdmin] = useState(false);
   const [email, setEmail] = useState('ana@agenda.recife');
   const [senha, setSenha] = useState('123456');
   const [nome, setNome] = useState('');
@@ -17,7 +18,9 @@ export default function Perfil({ sessao, onEntrar }) {
     try {
       const resposta = modoCadastro
         ? await api.cadastro({ nome, email, senha })
-        : await api.login({ email, senha });
+        : modoAdmin
+          ? await api.loginAdministrador({ email, senha })
+          : await api.login({ email, senha });
       onEntrar(resposta);
     } catch (erroApi) {
       setErro(erroApi.message);
@@ -49,7 +52,7 @@ export default function Perfil({ sessao, onEntrar }) {
   if (!sessao?.usuario) {
     return (
       <main className="container">
-        <h2>{modoCadastro ? 'Criar conta' : 'Entrar'}</h2>
+        <h2>{modoCadastro ? 'Criar conta' : modoAdmin ? 'Entrar como administrador' : 'Entrar'}</h2>
 
         <form onSubmit={autenticar} className="formulario-auth">
           {modoCadastro ? (
@@ -69,12 +72,23 @@ export default function Perfil({ sessao, onEntrar }) {
             <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
           </label>
 
-          <button type="submit">{modoCadastro ? 'Cadastrar' : 'Entrar'}</button>
+          <button type="submit">{modoCadastro ? 'Cadastrar' : modoAdmin ? 'Entrar como admin' : 'Entrar'}</button>
         </form>
 
-        <button className="link-botao" onClick={() => setModoCadastro((v) => !v)}>
+        <button
+          className="link-botao"
+          onClick={() => {
+            setModoCadastro((v) => !v);
+            setModoAdmin(false);
+          }}
+        >
           {modoCadastro ? 'Já tenho conta' : 'Não tenho conta'}
         </button>
+        {!modoCadastro ? (
+          <button className="link-botao" onClick={() => setModoAdmin((v) => !v)}>
+            {modoAdmin ? 'Entrar como usuário comum' : 'Entrar como administrador'}
+          </button>
+        ) : null}
         {erro ? <p className="erro">{erro}</p> : null}
       </main>
     );
