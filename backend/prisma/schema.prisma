@@ -14,6 +14,12 @@ enum StatusEvento {
   sinalizado
 }
 
+enum FuncaoUsuario {
+  usuario
+  moderador
+  administrador
+}
+
 model Usuario {
   id            String           @id @default(uuid()) @db.Uuid
   nome          String
@@ -23,9 +29,11 @@ model Usuario {
   avatarUrl     String?          @map("avatar_url")
   reputacao     Int              @default(0)
   verificado    Boolean          @default(false)
+  funcao        FuncaoUsuario    @default(usuario)
   criadoEm      DateTime         @default(now()) @map("criado_em")
 
   eventosCriados  Evento[]         @relation("EventoCriadoPor")
+  eventosModerados Evento[]        @relation("EventoModeradoPor")
   locaisCriados   Local[]          @relation("LocalCriadoPor")
   artistasCriados Artista[]        @relation("ArtistaCriadoPor")
   agendaEventos   AgendaEvento[]
@@ -77,11 +85,14 @@ model Evento {
   horaInicio  String          @map("hora_inicio")
   horaFim     String?         @map("hora_fim")
   criadoPor   String          @map("criado_por") @db.Uuid
+  moderadoPor String?         @map("moderado_por") @db.Uuid
+  moderadoEm  DateTime?       @map("moderado_em")
   status      StatusEvento    @default(pendente)
   criadoEm    DateTime        @default(now()) @map("criado_em")
 
   local           Local           @relation(fields: [localId], references: [id])
   criador         Usuario         @relation("EventoCriadoPor", fields: [criadoPor], references: [id])
+  moderador       Usuario?        @relation("EventoModeradoPor", fields: [moderadoPor], references: [id])
   eventoArtistas  EventoArtista[]
   agendaEventos   AgendaEvento[]
   denuncias       DenunciaEvento[]
