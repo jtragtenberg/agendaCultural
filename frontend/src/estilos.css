@@ -66,6 +66,37 @@ textarea {
   padding: 1rem;
 }
 
+.painel-janelas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.9rem;
+}
+
+.janela-mini {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.8rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.janela-mini-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.janela-mini h3 {
+  margin: 0;
+}
+
+.janela-mini ul {
+  margin: 0.6rem 0 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
 .lista-eventos {
   display: grid;
   gap: 1rem;
@@ -77,6 +108,13 @@ textarea {
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.acoes-card {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
 .formulario,
