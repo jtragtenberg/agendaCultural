@@ -10,6 +10,32 @@ async function validarModerador(usuarioId) {
   return Boolean(usuario?.verificado || usuario?.reputacao >= 200);
 }
 
+rotas.get('/moderacao/nao-moderados', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const eventos = await prisma.evento.findMany({
+      where: {
+        status: {
+          in: ['pendente', 'sinalizado']
+        }
+      },
+      include: {
+        local: true,
+        criador: { select: { id: true, nome: true, email: true } },
+        eventoArtistas: { include: { artista: true } }
+      },
+      orderBy: [{ data: 'asc' }, { criadoEm: 'asc' }]
+    });
+
+    return res.json(eventos);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao listar eventos não moderados.' });
+  }
+});
+
 rotas.post('/:id/denunciar', autenticarObrigatorio, async (req, res) => {
   try {
     const { motivo } = req.body;
@@ -85,6 +111,53 @@ rotas.post('/:id/rejeitar', autenticarObrigatorio, async (req, res) => {
     return res.json(evento);
   } catch (erro) {
     return res.status(500).json({ erro: 'Falha ao rejeitar evento.' });
+  }
+});
+
+rotas.put('/:id/editar', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const { titulo, descricao, localId, data, horaInicio, horaFim, status } = req.body;
+
+    const evento = await prisma.evento.update({
+      where: { id: req.params.id },
+      data: {
+        titulo,
+        descricao,
+        localId,
+        data: data ? new Date(data) : undefined,
+        horaInicio,
+        horaFim,
+        status
+      },
+      include: {
+        local: true,
+        eventoArtistas: { include: { artista: true } }
+      }
+    });
+
+    return res.json(evento);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao editar evento.' });
+  }
+});
+
+rotas.delete('/:id', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    await prisma.evento.delete({ where: { id: req.params.id } });
+    return res.status(204).send();
+  } catch (erro) {
+    if (erro.code === 'P2025') {
+      return res.status(404).json({ erro: 'Evento não encontrado.' });
+    }
+    return res.status(500).json({ erro: 'Falha ao apagar evento.' });
   }
 });
 
