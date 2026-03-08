@@ -94,6 +94,10 @@ export const api = {
   minhaAgenda: (token) => requisicao('/agenda/minha', { headers: cabecalhos(token) }),
 
   meuPerfil: (id) => requisicao(`/usuarios/${id}`),
+  listarUsuarios: (busca = '', token) =>
+    requisicao(`/usuarios${queryBusca(busca)}`, {
+      headers: cabecalhos(token)
+    }),
 
   denunciarEvento: (id, motivo, token) =>
     requisicao(`/eventos/${id}/denunciar`, {
