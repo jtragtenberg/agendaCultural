@@ -78,4 +78,26 @@ rotas.get('/minha', autenticarObrigatorio, async (req, res) => {
   }
 });
 
+rotas.delete('/remover/:eventoId', autenticarObrigatorio, async (req, res) => {
+  try {
+    const { eventoId } = req.params;
+
+    await prisma.agendaEvento.delete({
+      where: {
+        usuarioId_eventoId: {
+          usuarioId: req.usuario.id,
+          eventoId
+        }
+      }
+    });
+
+    return res.status(204).send();
+  } catch (erro) {
+    if (erro.code === 'P2025') {
+      return res.status(404).json({ erro: 'Evento não está na sua agenda.' });
+    }
+    return res.status(500).json({ erro: 'Falha ao remover evento da agenda.' });
+  }
+});
+
 module.exports = rotas;
