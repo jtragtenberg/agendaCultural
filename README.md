@@ -162,7 +162,19 @@ Na raiz do projeto:
 docker compose up --build
 ```
 
-Observação: no ambiente Docker de desenvolvimento, o backend aplica `prisma db push --force-reset` ao subir, recriando o schema e reseedando os dados.
+Setup inicial do banco (uma vez, ou quando mudar schema):
+
+```bash
+docker compose exec backend npx prisma db push
+docker compose exec backend npm run prisma:seed
+```
+
+Fluxo rápido de desenvolvimento:
+
+- deixe `docker compose up` rodando
+- backend usa `nodemon` e frontend usa `vite` com hot reload
+- ao editar código, as mudanças entram sem derrubar/subir os containers
+- rode `prisma db push` apenas quando alterar o schema
 
 Serviços:
 
