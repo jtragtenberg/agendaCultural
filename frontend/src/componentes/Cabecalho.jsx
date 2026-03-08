@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-export default function Cabecalho({ usuario, onSair }) {
+export default function Cabecalho({ usuario, onSair, ehModerador }) {
   return (
     <header className="cabecalho">
       <div>
@@ -14,6 +14,7 @@ export default function Cabecalho({ usuario, onSair }) {
           <>
             <Link to="/buscar-eventos">Buscar eventos</Link>
             <Link to="/criar-evento">Criar evento</Link>
+            {ehModerador ? <Link to="/moderacao">Moderação</Link> : null}
             <Link to="/perfil">Meu perfil</Link>
           </>
         ) : null}

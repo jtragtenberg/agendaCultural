@@ -8,6 +8,7 @@ import Perfil from './paginas/Perfil';
 import PaginaLocal from './paginas/PaginaLocal';
 import PaginaArtista from './paginas/PaginaArtista';
 import BuscarEventos from './paginas/BuscarEventos';
+import ModeracaoEventos from './paginas/ModeracaoEventos';
 
 const chaveSessao = 'agenda-cultural-recife:sessao';
 
@@ -35,14 +36,19 @@ export default function App() {
   }
 
   const token = useMemo(() => sessao?.token, [sessao]);
+  const ehModerador = useMemo(
+    () => Boolean(sessao?.usuario?.verificado || Number(sessao?.usuario?.reputacao || 0) >= 200),
+    [sessao]
+  );
 
   return (
     <>
-      <Cabecalho usuario={sessao?.usuario} onSair={sair} />
+      <Cabecalho usuario={sessao?.usuario} onSair={sair} ehModerador={ehModerador} />
 
       <Routes>
         <Route path="/" element={token ? <Inicio token={token} /> : <BuscarEventos token={token} />} />
         <Route path="/buscar-eventos" element={<BuscarEventos token={token} />} />
+        <Route path="/moderacao" element={<ModeracaoEventos token={token} ehModerador={ehModerador} />} />
         <Route path="/evento/:id" element={<PaginaEvento token={token} />} />
         <Route path="/locais/:id" element={<PaginaLocal token={token} />} />
         <Route path="/artistas/:id" element={<PaginaArtista token={token} />} />
