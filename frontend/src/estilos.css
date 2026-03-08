@@ -223,6 +223,12 @@ button {
   font-size: 0.78rem;
 }
 
+.evento-mini-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
 .evento-mini p {
   margin: 0;
 }
