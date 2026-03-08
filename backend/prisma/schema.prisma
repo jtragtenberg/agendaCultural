@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusEvento {
+  pendente
+  aprovado
+  rejeitado
+  sinalizado
+}
+
+model Usuario {
+  id            String           @id @default(uuid()) @db.Uuid
+  nome          String
+  email         String           @unique
+  senhaHash     String           @map("senha_hash")
+  bio           String?
+  avatarUrl     String?          @map("avatar_url")
+  reputacao     Int              @default(0)
+  verificado    Boolean          @default(false)
+  criadoEm      DateTime         @default(now()) @map("criado_em")
+
+  eventosCriados  Evento[]         @relation("EventoCriadoPor")
+  locaisCriados   Local[]          @relation("LocalCriadoPor")
+  artistasCriados Artista[]        @relation("ArtistaCriadoPor")
+  agendaEventos   AgendaEvento[]
+  seguindo        Seguidor[]       @relation("SeguidorSeguindo")
+  seguidores      Seguidor[]       @relation("SeguidorSeguidor")
+  denuncias       DenunciaEvento[] @relation("DenunciasPorUsuario")
+
+  @@map("usuarios")
+}
+
+model Local {
+  id         String   @id @default(uuid()) @db.Uuid
+  nome       String
+  endereco   String
+  bairro     String
+  cidade     String
+  latitude   Decimal? @db.Decimal(10, 7)
+  longitude  Decimal? @db.Decimal(10, 7)
+  criadoPor  String   @map("criado_por") @db.Uuid
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  criador    Usuario  @relation("LocalCriadoPor", fields: [criadoPor], references: [id])
+  eventos    Evento[]
+
+  @@map("locais")
+}
+
+model Artista {
+  id         String          @id @default(uuid()) @db.Uuid
+  nome       String
+  descricao  String?
+  instagram  String?
+  website    String?
+  criadoPor  String          @map("criado_por") @db.Uuid
+  criadoEm   DateTime        @default(now()) @map("criado_em")
+
+  criador       Usuario         @relation("ArtistaCriadoPor", fields: [criadoPor], references: [id])
+  eventoArtistas EventoArtista[]
+
+  @@map("artistas")
+}
+
+model Evento {
+  id          String          @id @default(uuid()) @db.Uuid
+  titulo      String
+  descricao   String
+  localId     String          @map("local_id") @db.Uuid
+  data        DateTime
+  horaInicio  String          @map("hora_inicio")
+  horaFim     String?         @map("hora_fim")
+  criadoPor   String          @map("criado_por") @db.Uuid
+  status      StatusEvento    @default(pendente)
+  criadoEm    DateTime        @default(now()) @map("criado_em")
+
+  local           Local           @relation(fields: [localId], references: [id])
+  criador         Usuario         @relation("EventoCriadoPor", fields: [criadoPor], references: [id])
+  eventoArtistas  EventoArtista[]
+  agendaEventos   AgendaEvento[]
+  denuncias       DenunciaEvento[]
+
+  @@index([localId, data])
+  @@map("eventos")
+}
+
+model EventoArtista {
+  eventoId   String   @map("evento_id") @db.Uuid
+  artistaId  String   @map("artista_id") @db.Uuid
+  papel      String?
+
+  evento     Evento   @relation(fields: [eventoId], references: [id])
+  artista    Artista  @relation(fields: [artistaId], references: [id])
+
+  @@id([eventoId, artistaId])
+  @@map("evento_artistas")
+}
+
+model AgendaEvento {
+  id         String   @id @default(uuid()) @db.Uuid
+  usuarioId  String   @map("usuario_id") @db.Uuid
+  eventoId   String   @map("evento_id") @db.Uuid
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  evento     Evento   @relation(fields: [eventoId], references: [id])
+
+  @@unique([usuarioId, eventoId])
+  @@map("agenda_eventos")
+}
+
+model Seguidor {
+  seguidorId String   @map("seguidor_id") @db.Uuid
+  seguindoId String   @map("seguindo_id") @db.Uuid
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  seguidor   Usuario  @relation("SeguidorSeguidor", fields: [seguidorId], references: [id])
+  seguindo   Usuario  @relation("SeguidorSeguindo", fields: [seguindoId], references: [id])
+
+  @@id([seguidorId, seguindoId])
+  @@map("seguidores")
+}
+
+model DenunciaEvento {
+  id            String   @id @default(uuid()) @db.Uuid
+  eventoId       String   @map("evento_id") @db.Uuid
+  denunciadoPor  String   @map("denunciado_por") @db.Uuid
+  motivo         String
+  criadoEm       DateTime @default(now()) @map("criado_em")
+
+  evento         Evento   @relation(fields: [eventoId], references: [id])
+  denunciante    Usuario  @relation("DenunciasPorUsuario", fields: [denunciadoPor], references: [id])
+
+  @@unique([eventoId, denunciadoPor])
+  @@map("denuncias_evento")
+}

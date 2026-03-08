@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agenda_cultural_postgres
+    environment:
+      POSTGRES_DB: agenda_cultural
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - dados_postgres:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: agenda_cultural_backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agenda_cultural
+      PORTA: 3000
+      JWT_SEGREDO: segredo-docker-local
+    depends_on:
+      - postgres
+    ports:
+      - '3000:3000'
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: agenda_cultural_frontend
+    environment:
+      VITE_API_URL: http://localhost:3000
+    depends_on:
+      - backend
+    ports:
+      - '5173:5173'
+
+volumes:
+  dados_postgres:
