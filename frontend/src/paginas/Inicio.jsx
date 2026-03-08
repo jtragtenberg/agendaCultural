@@ -25,6 +25,7 @@ function chaveData(ano, mes, dia) {
 
 export default function Inicio({ token }) {
   const [eventos, setEventos] = useState([]);
+  const [idsMinhaAgenda, setIdsMinhaAgenda] = useState(new Set());
   const [erro, setErro] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [referencia, setReferencia] = useState(() => {
@@ -37,6 +38,21 @@ export default function Inicio({ token }) {
       .listarEventos(token)
       .then((dados) => setEventos(dados.filter((evento) => evento.status === 'aprovado')))
       .catch((e) => setErro(e.message));
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) {
+      setIdsMinhaAgenda(new Set());
+      return;
+    }
+
+    api
+      .minhaAgenda(token)
+      .then((dados) => {
+        const ids = new Set(dados.agendaPropria.map((item) => item.evento.id));
+        setIdsMinhaAgenda(ids);
+      })
+      .catch(() => setIdsMinhaAgenda(new Set()));
   }, [token]);
 
   const eventosPorDia = useMemo(() => {
@@ -63,6 +79,7 @@ export default function Inicio({ token }) {
 
     try {
       await api.adicionarAgenda(eventoId, token);
+      setIdsMinhaAgenda((anterior) => new Set([...anterior, eventoId]));
       setMensagem('Evento adicionado à sua agenda pessoal.');
     } catch (e) {
       setErro(e.message);
@@ -126,9 +143,11 @@ export default function Inicio({ token }) {
                       <p>
                         {evento.horaInicio} - {evento.local.nome}
                       </p>
-                      <button type="button" onClick={() => adicionarNaAgenda(evento.id)}>
-                        Adicionar à minha agenda
-                      </button>
+                      {token && !idsMinhaAgenda.has(evento.id) ? (
+                        <button type="button" onClick={() => adicionarNaAgenda(evento.id)}>
+                          Adicionar à minha agenda
+                        </button>
+                      ) : null}
                     </article>
                   ))}
                 </div>
