@@ -136,6 +136,36 @@ export const api = {
       method: 'DELETE',
       headers: cabecalhos(token)
     }),
+  listarLocaisModeracao: (token) =>
+    requisicao('/eventos/moderacao/locais', {
+      headers: cabecalhos(token)
+    }),
+  editarLocalModeracao: (id, dados, token) =>
+    requisicao(`/eventos/moderacao/locais/${id}`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+  apagarLocalModeracao: (id, token) =>
+    requisicao(`/eventos/moderacao/locais/${id}`, {
+      method: 'DELETE',
+      headers: cabecalhos(token)
+    }),
+  listarArtistasModeracao: (token) =>
+    requisicao('/eventos/moderacao/artistas', {
+      headers: cabecalhos(token)
+    }),
+  editarArtistaModeracao: (id, dados, token) =>
+    requisicao(`/eventos/moderacao/artistas/${id}`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+  apagarArtistaModeracao: (id, token) =>
+    requisicao(`/eventos/moderacao/artistas/${id}`, {
+      method: 'DELETE',
+      headers: cabecalhos(token)
+    }),
 
   seguirUsuario: (usuarioId, token) =>
     requisicao(`/seguir/${usuarioId}`, {
