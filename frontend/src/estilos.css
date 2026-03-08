@@ -471,6 +471,17 @@ button:disabled {
   padding-left: 1rem;
 }
 
+.painel-admin {
+  background: linear-gradient(135deg, rgba(232, 244, 255, 0.82) 0%, rgba(243, 240, 255, 0.76) 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(107, 133, 210, 0.35);
+  padding: 1rem;
+}
+
+.admin-card {
+  border-color: rgba(107, 133, 210, 0.35);
+}
+
 @media (max-width: 900px) {
   .calendario-grade {
     grid-template-columns: repeat(1, minmax(0, 1fr));
