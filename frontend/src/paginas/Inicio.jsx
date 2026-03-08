@@ -2,105 +2,143 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../servicos/api';
 
-function ordenarPorData(items) {
-  return [...items].sort((a, b) => new Date(a.evento.data) - new Date(b.evento.data));
+const nomesMeses = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro'
+];
+
+const nomesSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+function chaveData(ano, mes, dia) {
+  return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
 export default function Inicio({ token }) {
-  const [agenda, setAgenda] = useState(null);
   const [eventos, setEventos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
   const [erro, setErro] = useState('');
+  const [mensagem, setMensagem] = useState('');
+  const [referencia, setReferencia] = useState(() => {
+    const hoje = new Date();
+    return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  });
 
   useEffect(() => {
-    if (!token) return;
-
-    Promise.all([api.minhaAgenda(token), api.listarEventos(token), api.listarUsuarios('', token)])
-      .then(([dadosAgenda, dadosEventos, dadosUsuarios]) => {
-        setAgenda(dadosAgenda);
-        setEventos(dadosEventos.filter((evento) => evento.status === 'aprovado'));
-        setUsuarios(dadosUsuarios);
-      })
+    api
+      .listarEventos(token)
+      .then((dados) => setEventos(dados.filter((evento) => evento.status === 'aprovado')))
       .catch((e) => setErro(e.message));
   }, [token]);
 
-  const proximosDaAgenda = useMemo(() => {
-    if (!agenda) return [];
-    return ordenarPorData([...agenda.agendaPropria, ...agenda.agendaSeguindo]).slice(0, 6);
-  }, [agenda]);
+  const eventosPorDia = useMemo(() => {
+    const mapa = new Map();
 
-  const eventosDestaque = useMemo(() => eventos.slice(0, 6), [eventos]);
-  const sugestoesAmigos = useMemo(() => usuarios.slice(0, 6), [usuarios]);
+    eventos.forEach((evento) => {
+      const chave = evento.data.slice(0, 10);
+      const atual = mapa.get(chave) || [];
+      atual.push(evento);
+      mapa.set(chave, atual);
+    });
 
-  if (!token) {
-    return (
-      <main className="container">
-        <h2>Agenda Cultural do Recife</h2>
-        <p>Faça login para ver sua agenda pessoal como tela inicial.</p>
-        <p>
-          Acesse <Link to="/perfil">Perfil</Link> para entrar.
-        </p>
-      </main>
-    );
+    return mapa;
+  }, [eventos]);
+
+  async function adicionarNaAgenda(eventoId) {
+    setMensagem('');
+    setErro('');
+
+    if (!token) {
+      setErro('Faça login para adicionar eventos na sua agenda pessoal.');
+      return;
+    }
+
+    try {
+      await api.adicionarAgenda(eventoId, token);
+      setMensagem('Evento adicionado à sua agenda pessoal.');
+    } catch (e) {
+      setErro(e.message);
+    }
   }
+
+  const ano = referencia.getFullYear();
+  const mes = referencia.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes + 1, 0).getDate();
+
+  const celulas = [];
+  for (let i = 0; i < primeiroDiaSemana; i += 1) celulas.push(null);
+  for (let dia = 1; dia <= totalDias; dia += 1) celulas.push(dia);
 
   return (
     <main className="container">
-      <h2>Minha Agenda Cultural</h2>
-      <p>Painel pessoal com sua agenda, eventos da cidade e pessoas para seguir.</p>
+      <h2>Agenda pública de eventos culturais</h2>
+      <p>Todos os eventos públicos em um só lugar. A partir daqui você monta sua agenda pessoal.</p>
+      {!token ? (
+        <p>
+          Para salvar eventos: <Link to="/perfil">entre na sua conta</Link>.
+        </p>
+      ) : null}
 
-      <section className="painel-janelas">
-        <article className="janela-mini">
-          <div className="janela-mini-topo">
-            <h3>Minha agenda</h3>
-            <Link to="/perfil">Abrir agenda completa</Link>
-          </div>
-          <ul>
-            {proximosDaAgenda.length === 0 ? (
-              <li>Nenhum evento salvo ainda.</li>
-            ) : (
-              proximosDaAgenda.map((item) => (
-                <li key={item.id}>
-                  <Link to={`/evento/${item.evento.id}`}>
-                    {item.evento.titulo} - {new Date(item.evento.data).toLocaleDateString('pt-BR')} ({item.evento.horaInicio})
-                  </Link>
-                </li>
-              ))
-            )}
-          </ul>
-        </article>
+      <section className="calendario-agenda">
+        <div className="calendario-topo">
+          <button onClick={() => setReferencia(new Date(ano, mes - 1, 1))}>Mês anterior</button>
+          <h3>
+            {nomesMeses[mes]} de {ano}
+          </h3>
+          <button onClick={() => setReferencia(new Date(ano, mes + 1, 1))}>Próximo mês</button>
+        </div>
 
-        <article className="janela-mini">
-          <div className="janela-mini-topo">
-            <h3>Buscar eventos</h3>
-            <Link to="/buscar-eventos">Ir para busca</Link>
-          </div>
-          <ul>
-            {eventosDestaque.map((evento) => (
-              <li key={evento.id}>
-                <Link to={`/evento/${evento.id}`}>
-                  {evento.titulo} - {new Date(evento.data).toLocaleDateString('pt-BR')} ({evento.local.nome})
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </article>
+        <div className="calendario-grade calendario-semana">
+          {nomesSemana.map((nome) => (
+            <div key={nome} className="calendario-dia-semana">
+              {nome}
+            </div>
+          ))}
+        </div>
 
-        <article className="janela-mini">
-          <div className="janela-mini-topo">
-            <h3>Buscar amigos</h3>
-            <Link to="/buscar-amigos">Encontrar pessoas</Link>
-          </div>
-          <ul>
-            {sugestoesAmigos.map((usuario) => (
-              <li key={usuario.id}>
-                {usuario.nome} {usuario.verificado ? '(verificado)' : ''}
-              </li>
-            ))}
-          </ul>
-        </article>
+        <div className="calendario-grade calendario-dias">
+          {celulas.map((dia, indice) => {
+            if (!dia) {
+              return <div key={`vazio-${indice}`} className="calendario-celula calendario-celula-vazia" />;
+            }
+
+            const chave = chaveData(ano, mes, dia);
+            const eventosDia = eventosPorDia.get(chave) || [];
+
+            return (
+              <div key={chave} className="calendario-celula">
+                <div className="calendario-numero">{dia}</div>
+                <div className="calendario-eventos-dia">
+                  {eventosDia.map((evento) => (
+                    <article key={evento.id} className="evento-mini">
+                      <p className="evento-mini-titulo">
+                        <Link to={`/evento/${evento.id}`}>{evento.titulo}</Link>
+                      </p>
+                      <p>
+                        {evento.horaInicio} - {evento.local.nome}
+                      </p>
+                      <button type="button" onClick={() => adicionarNaAgenda(evento.id)}>
+                        Adicionar à minha agenda
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
+      {mensagem ? <p className="sucesso">{mensagem}</p> : null}
       {erro ? <p className="erro">{erro}</p> : null}
     </main>
   );
