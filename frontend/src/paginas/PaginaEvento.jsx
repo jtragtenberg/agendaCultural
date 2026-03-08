@@ -52,6 +52,21 @@ export default function PaginaEvento({ token }) {
     }
   }
 
+  async function removerAgenda() {
+    if (!token) {
+      setErro('Faça login para remover eventos da agenda.');
+      return;
+    }
+
+    try {
+      await api.removerAgenda(id, token);
+      setMensagem('Evento removido da sua agenda.');
+      setJaNaAgenda(false);
+    } catch (e) {
+      setErro(e.message);
+    }
+  }
+
   async function denunciar() {
     if (!token) {
       setErro('Faça login para denunciar eventos.');
@@ -95,9 +110,11 @@ export default function PaginaEvento({ token }) {
         ))}
       </ul>
 
-      <button onClick={adicionarAgenda} disabled={jaNaAgenda}>
-        {jaNaAgenda ? 'Evento já está na minha agenda' : 'Adicionar à minha agenda'}
-      </button>
+      {jaNaAgenda ? (
+        <button onClick={removerAgenda}>Remover da minha agenda</button>
+      ) : (
+        <button onClick={adicionarAgenda}>Adicionar à minha agenda</button>
+      )}
 
       <section className="bloco-denuncia">
         <h3>Denunciar evento</h3>
