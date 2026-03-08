@@ -7,7 +7,7 @@ const rotas = express.Router();
 
 async function validarModerador(usuarioId) {
   const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
-  return Boolean(usuario?.verificado || usuario?.reputacao >= 200);
+  return Boolean(usuario?.funcao === 'moderador' || usuario?.funcao === 'administrador');
 }
 
 rotas.get('/moderacao/nao-moderados', autenticarObrigatorio, async (req, res) => {
@@ -103,7 +103,7 @@ rotas.post('/:id/aprovar', autenticarObrigatorio, async (req, res) => {
 
     const evento = await prisma.evento.update({
       where: { id: req.params.id },
-      data: { status: 'aprovado' }
+      data: { status: 'aprovado', moderadoPor: req.usuario.id, moderadoEm: new Date() }
     });
 
     await prisma.usuario.update({
@@ -125,7 +125,7 @@ rotas.post('/:id/rejeitar', autenticarObrigatorio, async (req, res) => {
 
     const evento = await prisma.evento.update({
       where: { id: req.params.id },
-      data: { status: 'rejeitado' },
+      data: { status: 'rejeitado', moderadoPor: req.usuario.id, moderadoEm: new Date() },
       include: { criador: true }
     });
 
@@ -157,7 +157,9 @@ rotas.put('/:id/editar', autenticarObrigatorio, async (req, res) => {
         data: data ? new Date(data) : undefined,
         horaInicio,
         horaFim,
-        status
+        status,
+        moderadoPor: req.usuario.id,
+        moderadoEm: new Date()
       },
       include: {
         local: true,
