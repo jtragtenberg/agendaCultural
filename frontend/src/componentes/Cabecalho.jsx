@@ -4,12 +4,12 @@ export default function Cabecalho({ usuario, onSair }) {
   return (
     <header className="cabecalho">
       <div>
-        <h1>Agenda Cultural do Recife</h1>
-        <p>Plataforma colaborativa de eventos musicais</p>
+        <h1>
+          <Link to="/">Agenda Cultural do Recife</Link>
+        </h1>
       </div>
 
       <nav>
-        <Link to="/">Início</Link>
         <Link to="/buscar-eventos">Buscar eventos</Link>
         <Link to="/criar-evento">Criar evento</Link>
         {usuario ? <Link to="/perfil">Meu perfil</Link> : null}
