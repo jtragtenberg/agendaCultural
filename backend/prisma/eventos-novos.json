@@ -1,0 +1,58 @@
+{
+  "locais": {
+    "teatroSantaIsabel": {
+      "nome": "Teatro de Santa Isabel",
+      "endereco": "Praça da República, s/n",
+      "bairro": "Santo Antônio",
+      "cidade": "Recife"
+    },
+    "casaLontra": {
+      "nome": "Casa Lontra",
+      "endereco": "Recife (endereço a confirmar)",
+      "bairro": "Recife",
+      "cidade": "Recife"
+    }
+  },
+  "eventos": [
+    {
+      "titulo": "Mayara, Iara e Dimitria + Tardio + Heltanásia + Minino Johnny",
+      "descricao": "Show experimental reunindo Mayara, Iara e Dimitria em power trio entre noise, post-rock e indie com camadas de vozes, guitarras e sintetizadores. A noite também conta com Tardio (Diogo Neves), explorando eletrônico, drone e folk, além de Heltanásia (Helton Leyendecker) apresentando o EP 'eu só queria tocar guitarra', com participação de Minino Johnny (DRVA, Noite Ruim Records). Abertura da casa às 19h.\n\nIngressos: https://shotgun.live/\nFonte: https://www.instagram.com/mayaraiaradimitria/reel/DVomOFxgJ43/",
+      "local": "casaLontra",
+      "data": "2026-03-21",
+      "horaInicio": "19:00",
+      "horaFim": null,
+      "artistas": [
+        "Mayara",
+        "Iara",
+        "Dimitria",
+        "Tardio",
+        "Heltanásia",
+        "Minino Johnny"
+      ]
+    },
+    {
+      "titulo": "Orquestra Sinfônica do Recife – Abertura da Temporada 2026 (Concerto 1)",
+      "descricao": "Concerto da Orquestra Sinfônica do Recife com trilhas de filmes pernambucanos como 'O Agente Secreto' e 'Bacurau' (Mateus Alves e Tomaz Alves Souza) e 'Brasil S/A'. O programa também celebra o manguebeat com a Suíte Nação Zumbi (arr. Kid Bone) e inclui obras de Capiba, Carlos Gomes, Paulo Arruda e Hilson Costa.\n\nIngressos gratuitos: https://conecta.recife.pe.gov.br/\nFonte: https://www.instagram.com/p/DVmryEtEZWY/",
+      "local": "teatroSantaIsabel",
+      "data": "2026-03-11",
+      "horaInicio": "20:00",
+      "horaFim": "22:00",
+      "artistas": [
+        "Orquestra Sinfônica do Recife",
+        "José Renato Accioly"
+      ]
+    },
+    {
+      "titulo": "Orquestra Sinfônica do Recife – Abertura da Temporada 2026 (Concerto 2)",
+      "descricao": "Segundo concerto da abertura da temporada 2026 da Orquestra Sinfônica do Recife com trilhas de filmes pernambucanos e repertório que celebra o manguebeat e a música brasileira.\n\nIngressos gratuitos: https://conecta.recife.pe.gov.br/\nFonte: https://www.instagram.com/p/DVmryEtEZWY/",
+      "local": "teatroSantaIsabel",
+      "data": "2026-03-12",
+      "horaInicio": "20:00",
+      "horaFim": "22:00",
+      "artistas": [
+        "Orquestra Sinfônica do Recife",
+        "José Renato Accioly"
+      ]
+    }
+  ]
+}

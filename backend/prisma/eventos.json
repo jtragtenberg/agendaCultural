@@ -1,0 +1,71 @@
+{
+  "locais": {
+    "teatroDoParque": {
+      "nome": "Teatro do Parque",
+      "endereco": "R. do Hospício, 81",
+      "bairro": "Boa Vista",
+      "cidade": "Recife"
+    },
+    "pacoDoFrevo": {
+      "nome": "Paço do Frevo",
+      "endereco": "Praça do Arsenal da Marinha, s/n",
+      "bairro": "Recife Antigo",
+      "cidade": "Recife"
+    },
+    "caixaCultural": {
+      "nome": "CAIXA Cultural Recife",
+      "endereco": "Av. Alfredo Lisboa, 505",
+      "bairro": "Recife Antigo",
+      "cidade": "Recife"
+    },
+    "casaLontra": {
+      "nome": "Casa Lontra",
+      "endereco": "Recife (endereço a confirmar)",
+      "bairro": "Recife",
+      "cidade": "Recife"
+    },
+    "casaEstacao": {
+      "nome": "Casa Estação da Luz",
+      "endereco": "Rua Prudente de Morais, 313",
+      "bairro": "Carmo",
+      "cidade": "Olinda"
+    }
+  },
+
+  "eventos": [
+    {
+      "titulo": "II Recife Frevo Festival - Edição Teatro do Parque",
+      "descricao": "Festival gratuito celebrando o frevo como linguagem viva. Ingressos distribuídos na bilheteria a partir das 18h.",
+      "local": "teatroDoParque",
+      "data": "2026-03-12",
+      "horaInicio": "19:00",
+      "horaFim": "22:00",
+      "artistas": ["II Recife Frevo Festival"]
+    },
+    {
+      "titulo": "Hora do Frevo com Lígia Fernandes Trio",
+      "descricao": "Programação especial do Recife Frevo Festival no Paço do Frevo.",
+      "local": "pacoDoFrevo",
+      "data": "2026-03-13",
+      "horaInicio": "12:00",
+      "horaFim": "13:30",
+      "artistas": ["Lígia Fernandes Trio"]
+    },
+    {
+      "titulo": "Martins - Lançamento de \"Ao Vivo na Casa Estação da Luz\"",
+      "descricao": "Show especial de lançamento do álbum com repertório autoral e releituras da música brasileira.",
+      "local": "casaEstacao",
+      "data": "2026-03-28",
+      "horaInicio": "19:00",
+      "horaFim": "22:00",
+      "artistas": ["Martins"]
+    }
+  ],
+
+  "reverbo": {
+    "dias": [5,6,7,12,13,14,19,20,21],
+    "horaInicio": "20:00",
+    "horaFim": "22:00",
+    "artistas": ["Juliano Holanda","Mery Lemos"]
+  }
+}
