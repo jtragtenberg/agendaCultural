@@ -207,7 +207,31 @@ O script instala Docker, configura o firewall, clona o repositório e gera o `.e
 
 O script é idempotente: pode ser rodado mais de uma vez sem problema. Variáveis já definidas no `.env.prod` são preservadas.
 
-### 2. Deploys seguintes
+### 2. Inicializar o banco de dados (primeira vez)
+
+Após o setup, o banco existe mas está vazio. Verifique:
+
+```bash
+ssh root@104.131.127.99
+docker exec agenda_cultural_db psql -U postgres -d agenda_cultural -c "SELECT email FROM usuarios;"
+```
+
+Se retornar `0 rows`, rode o schema e o seed:
+
+```bash
+docker exec agenda_cultural_backend npx prisma db push
+docker exec agenda_cultural_backend npm run prisma:seed
+```
+
+O seed cria os usuários iniciais (todos com senha `123456`):
+
+- `moderador@agenda.recife` — moderador verificado
+- `ana@agenda.recife` — usuária verificada
+- `joao@agenda.recife` — usuário comum
+
+> **Atenção:** o seed apaga todos os dados antes de recriar. Não rode em produção com dados reais.
+
+### 3. Deploys seguintes
 
 Na sua máquina local, após merge do `dev` no `main`:
 
