@@ -27,16 +27,32 @@ services:
       JWT_SEGREDO: segredo-docker-local
       CHOKIDAR_USEPOLLING: 'true'
       INSTAGRAM_JSON_PATH: /dados/instagram_posts.json
+      SCRAPER_URL: http://scraper:5000
     command: sh -c "npm install && npx prisma generate && npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
+      scraper:
+        condition: service_started
     ports:
       - '3000:3000'
     volumes:
       - ./backend:/app
       - backend_node_modules:/app/node_modules
       - ./dados:/dados
+
+  scraper:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile
+    container_name: agenda_cultural_scraper
+    environment:
+      TZ: America/Recife
+      SESSAO_DIR: /dados/.sessao
+    volumes:
+      - ./scripts:/scripts
+      - ./dados:/dados
+    restart: unless-stopped
 
   frontend:
     build:

@@ -6,15 +6,23 @@ Busca posts recentes de perfis públicos do Instagram e os disponibiliza no back
 
 O script usa [instaloader](https://instaloader.github.io/) para acessar perfis públicos com uma sessão autenticada (cookie). Os dados são salvos em `dados/instagram_posts.json` e `dados/instagram_posts.md`. O backend lê o JSON e serve via API REST. O frontend exibe os posts na rota `/instagram`.
 
-## Pré-requisitos
+## Com Docker (recomendado)
 
 ```bash
-pip install instaloader
+docker-compose up --build
 ```
 
-## Configuração inicial (uma vez só)
+O container `scraper` sobe automaticamente e roda a busca todo dia às **16:20 (horário de Recife)**. Para conectar uma conta, acesse `http://localhost:5173/instagram` — o formulário de login aparece se não houver sessão ativa.
 
-Faça login com uma conta do Instagram para salvar a sessão localmente. As credenciais **não ficam salvas** — apenas o cookie de sessão.
+## Sem Docker (local)
+
+### Pré-requisitos
+
+```bash
+pip install instaloader flask schedule
+```
+
+### Configuração inicial (uma vez só)
 
 ```bash
 python3 scripts/instagram_login.py
@@ -22,18 +30,26 @@ python3 scripts/instagram_login.py
 
 A sessão é salva em `dados/.sessao/` e ignorada pelo git.
 
-## Executar
+### Executar manualmente
 
 ```bash
 python3 scripts/buscar_instagram.py
 ```
 
-O script:
-- Verifica os **últimos 10 posts** de cada perfil
+### Agendador local
+
+```bash
+python3 scripts/agendador.py
+```
+
+Sobe a API de login na porta 5000 e agenda a busca diária às 16:20.
+
+## Comportamento da busca
+
+- Verifica os **últimos 10 posts** de cada perfil por execução
 - Baixa no máximo **5 posts novos por perfil** por execução
-- Ignora posts que já estão salvos (por shortcode)
-- A memória cresce sem limite — cada execução apenas acrescenta
-- Embaralha a ordem dos perfis e usa pausas aleatórias para evitar bloqueio
+- Posts já salvos (por shortcode) são ignorados — a memória só cresce
+- Ordem dos perfis embaralhada e pausas aleatórias para evitar detecção
 
 ## Adicionar perfis
 
@@ -47,22 +63,12 @@ PERFIS = [
 ]
 ```
 
-## Automação diária
-
-Adicione ao crontab (`crontab -e`):
-
-```
-20 16 * * * cd /caminho/do/projeto && python3 scripts/buscar_instagram.py >> dados/instagram_log.txt 2>&1
-```
-
 ## Feedbacks de segurança
-
-O script exibe avisos quando o Instagram acionar proteções:
 
 | Mensagem | Causa | Solução |
 |---|---|---|
 | `⚠️ SEGURANÇA: Rate limit (429)` | Muitas requisições | Script aguarda automaticamente |
-| `🔒 SEGURANÇA: Sessão expirada` | Cookie inválido | Rodar `instagram_login.py` novamente |
+| `🔒 SEGURANÇA: Sessão expirada` | Cookie inválido | Reconectar via frontend ou `instagram_login.py` |
 | `🚨 SEGURANÇA: Verificação manual` | Checkpoint do Instagram | Resolver no browser e refazer login |
 
 ## Arquivos gerados
@@ -75,4 +81,8 @@ O script exibe avisos quando o Instagram acionar proteções:
 
 ## API
 
-`GET /instagram/posts` — retorna o JSON completo com todos os perfis e posts.
+| Endpoint | Descrição |
+|---|---|
+| `GET /instagram/posts` | Lista todos os posts salvos |
+| `GET /instagram/sessao` | Verifica se há conta conectada |
+| `POST /instagram/login` | Conecta uma conta (proxy para o container scraper) |
