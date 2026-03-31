@@ -1,6 +1,19 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-export default function Cabecalho({ usuario, onSair, ehModerador }) {
+export default function Cabecalho({ usuario, onSair, ehModerador, onExportarAgenda }) {
+  const [aberto, setAberto] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!aberto) return;
+    function fechar(e) {
+      if (ref.current && !ref.current.contains(e.target)) setAberto(false);
+    }
+    document.addEventListener('mousedown', fechar);
+    return () => document.removeEventListener('mousedown', fechar);
+  }, [aberto]);
+
   return (
     <header className="cabecalho">
       <div>
@@ -9,21 +22,25 @@ export default function Cabecalho({ usuario, onSair, ehModerador }) {
         </h1>
       </div>
 
-      <nav>
-        {usuario ? (
-          <>
-            {ehModerador ? <Link to="/moderacao">Moderação</Link> : null}
-            <Link to="/perfil">Meu perfil</Link>
-          </>
-        ) : null}
-      </nav>
+      <nav />
 
       <div className="acoes-auth">
         {usuario ? (
-          <>
-            <span>Olá, {usuario.nome}</span>
-            <button onClick={onSair}>Sair</button>
-          </>
+          <div className="dropdown-usuario" ref={ref}>
+            <button className="btn-dropdown" onClick={() => setAberto((v) => !v)}>
+              {usuario.nome} ▾
+            </button>
+            {aberto ? (
+              <div className="dropdown-menu">
+                <Link to="/configuracoes" onClick={() => setAberto(false)}>Configurações</Link>
+                <button onClick={() => { setAberto(false); onExportarAgenda(); }}>Exportar agenda</button>
+                {ehModerador ? (
+                  <Link to="/moderacao" onClick={() => setAberto(false)}>Moderação</Link>
+                ) : null}
+                <button onClick={() => { setAberto(false); onSair(); }}>Sair</button>
+              </div>
+            ) : null}
+          </div>
         ) : (
           <Link to="/perfil">Entrar</Link>
         )}
