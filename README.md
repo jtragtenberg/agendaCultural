@@ -186,52 +186,54 @@ Serviços:
 
 ### 1. Setup inicial do servidor (uma vez só)
 
-Na sua máquina local, com acesso SSH ao servidor:
+Na sua máquina local:
 
 ```bash
-ssh root@104.131.127.99 'bash -s' < setup-servidor.sh
+ssh root@104.131.127.99 "GITHUB_TOKEN='ghp_SEU_TOKEN' bash -s" < setup-servidor.sh
 ```
 
-Isso instala Docker, configura o firewall e clona o repositório.
+O script instala Docker, configura o firewall, clona o repositório e gera o `.env.prod` com senhas aleatórias automaticamente. As credenciais geradas são exibidas no terminal — salve-as num gerenciador de senhas.
 
-> Antes de rodar, edite `REPO_URL` dentro de `setup-servidor.sh`.
+O script é idempotente: pode ser rodado mais de uma vez sem problema. Variáveis já definidas no `.env.prod` são preservadas.
 
-### 2. Configurar variáveis de ambiente no servidor
+### 2. Deploys seguintes
 
-```bash
-ssh root@104.131.127.99
-cd /opt/agenda-cultural
-cp .env.prod.exemplo .env.prod
-nano .env.prod   # preencha POSTGRES_PASSWORD, JWT_SEGREDO, VITE_API_URL
-```
-
-Gere o JWT secret com:
-```bash
-openssl rand -hex 32
-```
-
-### 3. Primeiro deploy
+Na sua máquina local, após merge do `dev` no `main`:
 
 ```bash
-ssh root@104.131.127.99
-cd /opt/agenda-cultural
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-```
-
-Inicializar o banco (uma vez só):
-```bash
-docker compose -f docker-compose.prod.yml exec backend npm run prisma:seed
-```
-
-### 4. Deploys seguintes
-
-Na sua máquina local, após um `git push`:
-
-```bash
+git checkout main && git merge dev && git push
 ./deploy.sh
 ```
 
-O script faz SSH no servidor, faz `git pull`, rebuilda e reinicia os containers.
+O `deploy.sh` verifica se o `main` local está sincronizado com o remoto antes de prosseguir, faz `git pull` no servidor e reinicia os containers.
+
+### 3. Fluxo de desenvolvimento
+
+```
+dev  →  testa local com docker compose  →  merge para main  →  ./deploy.sh
+```
+
+### Conectar conta do Instagram no servidor
+
+Necessário na primeira vez ou quando a sessão expirar. O login via IP de datacenter exige verificação manual:
+
+```bash
+# Opção A — fazer login dentro do container
+ssh root@104.131.127.99
+docker exec -it agenda_cultural_scraper python3 /scripts/instagram_login.py
+
+# Opção B — copiar sessão do Mac (mais fácil)
+# (rode instagram_login.py localmente primeiro)
+scp dados/.sessao/sessao-* root@104.131.127.99:/opt/agenda-cultural/dados/.sessao/
+```
+
+### Rodar busca do Instagram manualmente
+
+```bash
+ssh root@104.131.127.99 "docker exec agenda_cultural_scraper python3 /scripts/buscar_instagram.py"
+```
+
+A busca automática roda todo dia às 16h20 (horário de Recife) via container `scraper`.
 
 ### Portas abertas no servidor
 
