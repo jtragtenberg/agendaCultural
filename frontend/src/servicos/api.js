@@ -193,6 +193,8 @@ export const api = {
 
   adminListarUsuarios: (token) =>
     requisicao('/admin/usuarios', { headers: cabecalhos(token) }),
+  adminBuscarUsuario: (id, token) =>
+    requisicao(`/admin/usuarios/${id}`, { headers: cabecalhos(token) }),
   adminListarEventos: (token) =>
     requisicao('/admin/eventos', { headers: cabecalhos(token) }),
   adminAtualizarUsuario: (id, dados, token) =>

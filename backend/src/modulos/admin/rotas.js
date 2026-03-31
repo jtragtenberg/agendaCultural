@@ -45,6 +45,47 @@ rotas.get('/admin/usuarios', autenticarAdmin, async (_req, res) => {
   }
 });
 
+// GET /admin/usuarios/:id — perfil completo do usuário
+rotas.get('/admin/usuarios/:id', autenticarAdmin, async (req, res) => {
+  try {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true, nome: true, email: true, bio: true,
+        reputacao: true, verificado: true, funcao: true, criadoEm: true,
+        eventosCriados: {
+          include: { local: true, eventoArtistas: { include: { artista: true } } },
+          orderBy: { criadoEm: 'desc' }
+        },
+        eventosModerados: {
+          select: { id: true, titulo: true, status: true, data: true, moderadoEm: true },
+          orderBy: { moderadoEm: 'desc' }
+        },
+        locaisCriados: {
+          select: { id: true, nome: true, bairro: true, criadoEm: true },
+          orderBy: { criadoEm: 'desc' }
+        },
+        artistasCriados: {
+          select: { id: true, nome: true, instagram: true, criadoEm: true },
+          orderBy: { criadoEm: 'desc' }
+        },
+        agendaEventos: {
+          include: { evento: { include: { local: true } } },
+          orderBy: { criadoEm: 'desc' }
+        },
+        denuncias: {
+          include: { evento: { select: { id: true, titulo: true } } },
+          orderBy: { criadoEm: 'desc' }
+        },
+      }
+    });
+    if (!usuario) return res.status(404).json({ erro: 'Usuário não encontrado.' });
+    return res.json(usuario);
+  } catch {
+    return res.status(500).json({ erro: 'Falha ao carregar perfil.' });
+  }
+});
+
 // GET /admin/eventos — todos os eventos
 rotas.get('/admin/eventos', autenticarAdmin, async (_req, res) => {
   try {
