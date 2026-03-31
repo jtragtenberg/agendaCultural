@@ -9,7 +9,8 @@ MVP full-stack para cadastro colaborativo e curadoria participativa de eventos m
 - Banco: PostgreSQL
 - ORM: Prisma
 - Autenticação: JWT
-- Docker opcional com `docker compose up`
+- IA: OpenAI API (gpt-4o-mini)
+- Deploy: Docker + Nginx + Let's Encrypt
 
 ## Arquitetura
 
@@ -28,14 +29,19 @@ backend/
       moderacao/
       calendario/
       instagram/
+      admin/
+      ia/
 frontend/
+nginx/             ← config do proxy reverso
 scripts/           ← scraper Python do Instagram
 dados/             ← posts JSON + sessão + lista de perfis
 docker-compose.yml
+docker-compose.prod.yml
 ```
 
 ## Regras implementadas
 
+- Eventos aparecem imediatamente ao serem criados (status `pendente`); apenas `rejeitado` fica oculto.
 - Moderação de evento por status: `pendente`, `aprovado`, `rejeitado`, `sinalizado`.
 - Usuários com reputação alta ou verificados podem autoaprovar eventos.
 - Limite para usuário novo: até 3 eventos em 24h.
@@ -48,6 +54,16 @@ docker-compose.yml
   - evento sinalizado por denúncias: -10
 - Criação de evento com autocomplete para `locais` e `artistas`, incluindo criação inline de novos registros.
 - Páginas públicas de artistas e locais com edição restrita a criador ou moderador.
+
+## Funções de usuário
+
+| Função | Acesso |
+|---|---|
+| `usuario` | criar eventos, agenda pessoal |
+| `moderador` | aprovar/rejeitar/editar/apagar eventos, locais e artistas |
+| `administrador` | painel admin completo + todas as ações de moderador |
+
+Moderadores são identificados pelo campo `verificado = true` ou `reputacao >= 200`.
 
 ## Modelo de dados (Prisma/PostgreSQL)
 
@@ -70,12 +86,14 @@ Arquivo: `backend/prisma/schema.prisma`.
 
 A home page exibe um calendário unificado com duas camadas sobrepostas, ao estilo Google Calendar / iCal:
 
-- **Agenda Cultural Recife** (rosa) — todos os eventos aprovados
+- **Agenda Cultural Recife** (rosa) — todos os eventos não rejeitados
 - **Minha Agenda** (roxo) — eventos que o usuário adicionou à sua agenda pessoal
 
 Cada camada pode ser ativada ou desativada individualmente pela barra lateral esquerda. A busca por texto filtra apenas nos calendários visíveis.
 
 O botão `+` no canto superior direito de cada dia (visível quando logado) abre um modal para criar um evento, com a data já preenchida e horário padrão de 19h–21h.
+
+O modal de criação inclui um campo de extração por IA: cole uma descrição do evento (post do Instagram, notícia, texto curto) e clique em **Preencher formulário com IA** para pré-preencher os campos automaticamente.
 
 ### Configurações do usuário
 
@@ -83,6 +101,7 @@ Ao fazer login, o usuário é redirecionado para a home. No cabeçalho, clicar n
 
 - **Configurações** (`/configuracoes`) — editar nome e bio, trocar senha
 - **Exportar agenda** — modal para exportar eventos futuros como `.ics`, com seleção individual e memória da última exportação
+- **Painel Admin** — visível apenas para administradores
 - **Moderação** — visível apenas para moderadores
 - **Sair**
 
@@ -91,10 +110,20 @@ Ao fazer login, o usuário é redirecionado para a home. No cabeçalho, clicar n
 A página `/instagram` exibe um feed cronológico único (mais recente primeiro) de posts coletados de perfis monitorados:
 
 - Scroll infinito — carrega 20 posts por vez ao chegar no fim
-- Cada card exibe: foto de perfil, @handle linkado, data, thumbnail e legenda (expansível)
+- Cada card exibe: foto de perfil, @handle linkado, data, thumbnail, legenda (expansível) e coautores (quando houver)
 - Posts novos desde a última visita recebem badge **novo** e a página rola automaticamente até o primeiro não visto (rastreado via `localStorage`)
-- Barra lateral com lista de perfis monitorados e formulário para adicionar novos
-- Botão **Atualizar** dispara a busca no container scraper (processo assíncrono, leva ~1 min)
+- Barra lateral com checklist de perfis — cada usuário escolhe quais perfis quer ver (preferência salva no navegador)
+- Moderadores e administradores podem remover perfis da lista de monitoramento
+
+### Painel Admin (`/admin`)
+
+Disponível apenas para usuários com `funcao = administrador`. Três abas:
+
+- **Usuários** — tabela completa com edição inline de função, verificado e reputação; troca de senha sem precisar da atual; clique no nome exibe perfil detalhado com toda atividade no sistema
+- **Eventos** — todos os eventos (qualquer status), com edição e exclusão
+- **Métricas** — cards de totais e ranking de engajamento (score = reputação + eventos×10 + moderações×5 + itens na agenda×2)
+
+Todas as tabelas são ordenáveis por qualquer coluna.
 
 ## API principal
 
@@ -152,11 +181,30 @@ Moderação:
 - `GET /eventos/moderacao/locais`
 - `GET /eventos/moderacao/artistas`
 
+Admin (requer `funcao = administrador`):
+
+- `GET /admin/usuarios`
+- `GET /admin/usuarios/:id`
+- `PUT /admin/usuarios/:id`
+- `PUT /admin/usuarios/:id/senha`
+- `GET /admin/eventos`
+- `PUT /admin/eventos/:id`
+- `DELETE /admin/eventos/:id`
+- `PUT /admin/artistas/:id`
+- `DELETE /admin/artistas/:id`
+- `PUT /admin/locais/:id`
+- `DELETE /admin/locais/:id`
+
+IA:
+
+- `POST /ia/extrair-evento` — extrai dados de evento a partir de texto livre usando gpt-4o-mini
+
 Instagram:
 
-- `GET /instagram/posts?pagina=1&limite=20`
+- `GET /instagram/posts?pagina=1&limite=20&perfis=handle1,handle2`
 - `GET /instagram/perfis`
 - `POST /instagram/perfis`
+- `DELETE /instagram/perfis/:handle`
 - `POST /instagram/atualizar`
 - `GET /instagram/sessao`
 - `POST /instagram/login`
@@ -172,9 +220,12 @@ Inclui:
 
 Credenciais seed:
 
-- `moderador@agenda.recife / 123456`
-- `ana@agenda.recife / 123456`
-- `joao@agenda.recife / 123456`
+- `admin@agenda.recife / 123456` — administrador
+- `moderador@agenda.recife / 123456` — moderador verificado
+- `ana@agenda.recife / 123456` — usuária verificada
+- `joao@agenda.recife / 123456` — usuário comum
+
+> **Atenção:** o seed apaga todos os dados antes de recriar. Não rode em produção com dados reais.
 
 ## Executar local (sem Docker)
 
@@ -183,6 +234,7 @@ Credenciais seed:
 ```bash
 cd backend
 cp .env.exemplo .env
+# edite .env e adicione OPENAI_API_KEY se quiser usar o preenchimento por IA
 npm install
 npx prisma generate
 npx prisma db push
@@ -202,9 +254,7 @@ npm run dev
 
 Frontend em `http://localhost:5173`.
 
-Se necessário, configure `VITE_API_URL` apontando para a API.
-
-## Executar com Docker
+## Executar com Docker (desenvolvimento)
 
 Na raiz do projeto:
 
@@ -219,125 +269,94 @@ docker compose exec backend npx prisma db push
 docker compose exec backend npm run prisma:seed
 ```
 
-Fluxo rápido de desenvolvimento:
-
-- deixe `docker compose up` rodando
-- backend usa `nodemon` e frontend usa `vite` com hot reload
-- ao editar código, as mudanças entram sem derrubar/subir os containers
-- rode `prisma db push` apenas quando alterar o schema
-
 Serviços:
 
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:3000`
 - PostgreSQL: `localhost:5432`
 
-## Deploy em produção (VPS)
+## Deploy em produção (VPS com HTTPS)
 
-### 1. Setup inicial do servidor (uma vez só)
+### 1. Variáveis de ambiente
 
-Na sua máquina local:
+Crie o arquivo `.env` na raiz do projeto no servidor:
+
+```env
+POSTGRES_PASSWORD=senha_segura
+JWT_SEGREDO=segredo_longo_aleatorio
+VITE_API_URL=https://agenda.rec.br
+OPENAI_API_KEY=sk-...
+```
+
+### 2. Certificado SSL (primeira vez)
+
+Execute antes de subir os containers (porta 80 precisa estar livre):
 
 ```bash
-ssh root@104.131.127.99 "GITHUB_TOKEN='ghp_SEU_TOKEN' bash -s" < setup-servidor.sh
+mkdir -p certbot/conf certbot/www
+
+docker run --rm -p 80:80 \
+  -v $(pwd)/certbot/conf:/etc/letsencrypt \
+  certbot/certbot certonly --standalone \
+  -d agenda.rec.br -d www.agenda.rec.br \
+  --agree-tos --no-eff-email -m seuemail@exemplo.com
 ```
 
-O script instala Docker, configura o firewall, clona o repositório e gera o `.env.prod` com senhas aleatórias automaticamente. As credenciais geradas são exibidas no terminal — salve-as num gerenciador de senhas.
-
-O script é idempotente: pode ser rodado mais de uma vez sem problema. Variáveis já definidas no `.env.prod` são preservadas.
-
-### 2. Inicializar o banco de dados (primeira vez)
-
-Após o setup, o banco existe mas está vazio. Verifique:
+### 3. Subir os containers
 
 ```bash
-ssh root@104.131.127.99
-docker exec agenda_cultural_db psql -U postgres -d agenda_cultural -c "SELECT email FROM usuarios;"
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Se retornar `0 rows`, rode o schema e o seed:
+### 4. Inicializar o banco (primeira vez)
 
 ```bash
-docker exec agenda_cultural_backend npx prisma db push
-docker exec agenda_cultural_backend npm run prisma:seed
+docker compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec backend npm run prisma:seed
 ```
 
-O seed cria os usuários iniciais (todos com senha `123456`):
-
-- `moderador@agenda.recife` — moderador verificado
-- `ana@agenda.recife` — usuária verificada
-- `joao@agenda.recife` — usuário comum
-
-> **Atenção:** o seed apaga todos os dados antes de recriar. Não rode em produção com dados reais.
-
-### 3. Deploys seguintes
-
-Na sua máquina local, após merge do `dev` no `main`:
+### 5. Deploys seguintes
 
 ```bash
-git checkout main && git merge dev && git push
-./deploy.sh
+git pull origin dev
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-O `deploy.sh` verifica se o `main` local está sincronizado com o remoto antes de prosseguir, faz `git pull` no servidor e reinicia os containers.
-
-### 3. Fluxo de desenvolvimento
-
-```
-dev  →  testa local com docker compose  →  merge para main  →  ./deploy.sh
-```
-
-### Conectar conta do Instagram no servidor
-
-Necessário na primeira vez ou quando a sessão expirar. O login via IP de datacenter exige verificação manual:
-
-```bash
-# Opção A — fazer login dentro do container
-ssh root@104.131.127.99
-docker exec -it agenda_cultural_scraper python3 /scripts/instagram_login.py
-
-# Opção B — copiar sessão do Mac (mais fácil)
-# (rode instagram_login.py localmente primeiro)
-scp dados/.sessao/sessao-* root@104.131.127.99:/opt/agenda-cultural/dados/.sessao/
-```
-
-### Rodar busca do Instagram manualmente
-
-```bash
-ssh root@104.131.127.99 "docker exec agenda_cultural_scraper python3 /scripts/buscar_instagram.py"
-```
-
-A busca automática roda todo dia às 16h20 (horário de Recife) via container `scraper`.
+O container `certbot` renova o certificado automaticamente a cada 12h.
 
 ### Portas abertas no servidor
 
 | Porta | Serviço |
 |---|---|
-| 80 | Frontend (Nginx) |
-| 3000 | Backend API |
+| 80 | HTTP → redireciona para HTTPS |
+| 443 | HTTPS (frontend + API) |
 | 22 | SSH |
 
-### URLs de produção
+### Conectar conta do Instagram no servidor
 
-- Frontend: `http://104.131.127.99`
-- API: `http://104.131.127.99:3000/saude`
-- Instagram: `http://104.131.127.99/instagram`
+Necessário na primeira vez ou quando a sessão expirar:
+
+```bash
+# Opção A — fazer login dentro do container
+docker exec -it agenda_cultural_scraper python3 /scripts/instagram_login.py
+
+# Opção B — copiar sessão do Mac (mais fácil)
+scp dados/.sessao/sessao-* root@SEU_IP:/opt/agenda-cultural/dados/.sessao/
+```
+
+### Rodar busca do Instagram manualmente
+
+```bash
+docker exec agenda_cultural_scraper python3 /scripts/buscar_instagram.py
+```
+
+A busca automática roda todo dia às **16h20 (horário de Recife)** via container `scraper`.
 
 ---
 
 ## Feed do Instagram — scraper
 
 Os posts são coletados pelo container `scraper` (Python + instaloader) e salvos em `dados/instagram_posts.json`. A lista de perfis monitorados fica em `dados/perfis.json`.
-
-A busca automática roda todo dia às **16h20 (horário de Recife)**. Para rodar manualmente:
-
-```bash
-# via Docker
-docker exec agenda_cultural_scraper python3 /scripts/buscar_instagram.py
-
-# local
-python3 scripts/buscar_instagram.py
-```
 
 Para adicionar perfis: use o formulário na própria página `/instagram` ou edite `dados/perfis.json` diretamente.
 
@@ -348,3 +367,4 @@ Para adicionar perfis: use o formulário na própria página `/instagram` ou edi
 - O endpoint `.ics` é compatível com Google Calendar, Apple Calendar e Outlook.
 - A agenda pessoal referencia eventos existentes (`agenda_eventos`), sem duplicação de evento.
 - Todos os horários são armazenados em UTC no banco e exibidos no fuso de Recife (UTC-3).
+- A extração por IA usa `gpt-4o-mini` (OpenAI) — barato e suficiente para extração de texto estruturado.
