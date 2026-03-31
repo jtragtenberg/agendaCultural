@@ -40,7 +40,8 @@ rotas.post('/cadastro', async (req, res) => {
         nome: usuario.nome,
         email: usuario.email,
         reputacao: usuario.reputacao,
-        verificado: usuario.verificado
+        verificado: usuario.verificado,
+        funcao: usuario.funcao
       }
     });
   } catch (erro) {
@@ -73,7 +74,8 @@ rotas.post('/login', async (req, res) => {
         nome: usuario.nome,
         email: usuario.email,
         reputacao: usuario.reputacao,
-        verificado: usuario.verificado
+        verificado: usuario.verificado,
+        funcao: usuario.funcao
       }
     });
   } catch (erro) {

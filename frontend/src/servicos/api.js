@@ -189,5 +189,48 @@ export const api = {
 
   listarSeguindo: (token) => requisicao('/seguindo', { headers: cabecalhos(token) }),
 
-  baixarCalendario: (id) => requisicao(`/usuarios/${id}/calendario.ics`)
+  baixarCalendario: (id) => requisicao(`/usuarios/${id}/calendario.ics`),
+
+  adminListarUsuarios: (token) =>
+    requisicao('/admin/usuarios', { headers: cabecalhos(token) }),
+  adminBuscarUsuario: (id, token) =>
+    requisicao(`/admin/usuarios/${id}`, { headers: cabecalhos(token) }),
+  adminListarEventos: (token) =>
+    requisicao('/admin/eventos', { headers: cabecalhos(token) }),
+  adminAtualizarUsuario: (id, dados, token) =>
+    requisicao(`/admin/usuarios/${id}`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+  adminAlterarSenhaUsuario: (id, novaSenha, token) =>
+    requisicao(`/admin/usuarios/${id}/senha`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify({ novaSenha })
+    }),
+  adminEditarEvento: (id, dados, token) =>
+    requisicao(`/admin/eventos/${id}`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+  adminApagarEvento: (id, token) =>
+    requisicao(`/admin/eventos/${id}`, { method: 'DELETE', headers: cabecalhos(token) }),
+  adminEditarArtista: (id, dados, token) =>
+    requisicao(`/admin/artistas/${id}`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+  adminApagarArtista: (id, token) =>
+    requisicao(`/admin/artistas/${id}`, { method: 'DELETE', headers: cabecalhos(token) }),
+  adminEditarLocal: (id, dados, token) =>
+    requisicao(`/admin/locais/${id}`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+  adminApagarLocal: (id, token) =>
+    requisicao(`/admin/locais/${id}`, { method: 'DELETE', headers: cabecalhos(token) })
 };

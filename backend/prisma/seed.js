@@ -15,6 +15,18 @@ async function main() {
 
   const senhaHash = await bcrypt.hash('123456', 10);
 
+  await prisma.usuario.create({
+    data: {
+      nome: 'Administrador',
+      email: 'admin@agenda.recife',
+      senhaHash,
+      bio: 'Administrador do sistema.',
+      reputacao: 500,
+      verificado: true,
+      funcao: 'administrador'
+    }
+  });
+
   const moderador = await prisma.usuario.create({
     data: {
       nome: 'Curadoria Recife',

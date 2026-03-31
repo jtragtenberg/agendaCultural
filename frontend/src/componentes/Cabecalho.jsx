@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-export default function Cabecalho({ usuario, onSair, ehModerador, onExportarAgenda }) {
+export default function Cabecalho({ usuario, onSair, ehModerador, ehAdmin, onExportarAgenda }) {
   const [aberto, setAberto] = useState(false);
   const ref = useRef(null);
 
@@ -34,6 +34,9 @@ export default function Cabecalho({ usuario, onSair, ehModerador, onExportarAgen
               <div className="dropdown-menu">
                 <Link to="/configuracoes" onClick={() => setAberto(false)}>Configurações</Link>
                 <button onClick={() => { setAberto(false); onExportarAgenda(); }}>Exportar agenda</button>
+                {ehAdmin ? (
+                  <Link to="/admin" onClick={() => setAberto(false)}>Painel Admin</Link>
+                ) : null}
                 {ehModerador ? (
                   <Link to="/moderacao" onClick={() => setAberto(false)}>Moderação</Link>
                 ) : null}
