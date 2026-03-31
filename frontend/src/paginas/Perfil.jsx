@@ -4,8 +4,8 @@ import CalendarioAgenda from '../componentes/CalendarioAgenda';
 
 export default function Perfil({ sessao, onEntrar }) {
   const [modoCadastro, setModoCadastro] = useState(false);
-  const [email, setEmail] = useState('ana@agenda.recife');
-  const [senha, setSenha] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const [nome, setNome] = useState('');
   const [erro, setErro] = useState('');
   const [agenda, setAgenda] = useState(null);
