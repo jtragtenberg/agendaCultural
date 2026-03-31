@@ -1026,6 +1026,22 @@ button:disabled {
   white-space: nowrap;
 }
 
+.post-colaboradores {
+  padding: 0 1rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--texto-fraco);
+}
+
+.post-colaboradores a {
+  color: var(--primaria);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.post-colaboradores a:hover {
+  text-decoration: underline;
+}
+
 .post-thumbnail-instagram {
   width: 100%;
   max-height: 480px;

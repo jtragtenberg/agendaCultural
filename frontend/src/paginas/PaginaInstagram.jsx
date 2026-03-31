@@ -107,6 +107,17 @@ function CardPost({ post, novo, refPrimeiro }) {
         </a>
         <span className="post-data-instagram">{post.dataFormatada}</span>
       </div>
+      {post.colaboradores?.length > 0 && (
+        <div className="post-colaboradores">
+          <span>com </span>
+          {post.colaboradores.map((c, i) => (
+            <span key={c.handle}>
+              <a href={c.url} target="_blank" rel="noreferrer">@{c.handle}</a>
+              {i < post.colaboradores.length - 1 && ', '}
+            </span>
+          ))}
+        </div>
+      )}
       {post.thumbnail && (
         <a href={post.url} target="_blank" rel="noreferrer">
           <img

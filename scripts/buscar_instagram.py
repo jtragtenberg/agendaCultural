@@ -132,6 +132,17 @@ def buscar_posts_novos(perfil, loader, ja_salvos):
                     thumbnail = post.url
                 except Exception:
                     pass
+
+                colaboradores = []
+                try:
+                    for coautor in post.coauthor_producers:
+                        colaboradores.append({
+                            "handle": coautor.username,
+                            "url": f"https://www.instagram.com/{coautor.username}/",
+                        })
+                except Exception:
+                    pass
+
                 novos.append({
                     "shortcode": post.shortcode,
                     "url": f"https://www.instagram.com/p/{post.shortcode}/",
@@ -141,6 +152,7 @@ def buscar_posts_novos(perfil, loader, ja_salvos):
                     "tipo": post.typename,
                     "thumbnail": thumbnail,
                     "likes": post.likes,
+                    "colaboradores": colaboradores,
                 })
                 pausa(PAUSA_ENTRE_POSTS)
             break  # sucesso — sai do while
