@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Cabecalho from './componentes/Cabecalho';
+import ModalExportarAgenda from './componentes/ModalExportarAgenda';
 import Home from './paginas/Home';
 import PaginaEvento from './paginas/PaginaEvento';
 import Perfil from './paginas/Perfil';
@@ -43,6 +44,8 @@ export default function App() {
     });
   }
 
+  const [modalExportar, setModalExportar] = useState(false);
+
   const token = useMemo(() => sessao?.token, [sessao]);
   const ehModerador = useMemo(
     () => Boolean(sessao?.usuario?.verificado || Number(sessao?.usuario?.reputacao || 0) >= 200),
@@ -51,7 +54,12 @@ export default function App() {
 
   return (
     <>
-      <Cabecalho usuario={sessao?.usuario} onSair={sair} ehModerador={ehModerador} />
+      <Cabecalho
+        usuario={sessao?.usuario}
+        onSair={sair}
+        ehModerador={ehModerador}
+        onExportarAgenda={() => setModalExportar(true)}
+      />
 
       <Routes>
         <Route path="/" element={<Home token={token} />} />
@@ -64,6 +72,10 @@ export default function App() {
         <Route path="/instagram" element={<PaginaInstagram />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {modalExportar ? (
+        <ModalExportarAgenda token={token} onFechar={() => setModalExportar(false)} />
+      ) : null}
     </>
   );
 }

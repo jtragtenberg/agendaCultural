@@ -50,21 +50,6 @@ export default function Configuracoes({ sessao, token, onAtualizarUsuario }) {
     }
   }
 
-  async function exportarCalendario() {
-    try {
-      const ics = await api.baixarCalendario(sessao.usuario.id);
-      const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'agenda-cultural-recife.ics';
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setErroPerfil(err.message);
-    }
-  }
-
   return (
     <main className="container">
       <h2>Configurações</h2>
@@ -90,7 +75,7 @@ export default function Configuracoes({ sessao, token, onAtualizarUsuario }) {
         {erroPerfil ? <p className="erro">{erroPerfil}</p> : null}
       </section>
 
-      <section className="formulario" style={{ marginBottom: '2rem' }}>
+      <section className="formulario">
         <h3 style={{ margin: '0 0 0.5rem' }}>Trocar senha</h3>
         <form onSubmit={alterarSenha} style={{ display: 'contents' }}>
           <label>
@@ -109,14 +94,6 @@ export default function Configuracoes({ sessao, token, onAtualizarUsuario }) {
         </form>
         {mensagemSenha ? <p className="sucesso">{mensagemSenha}</p> : null}
         {erroSenha ? <p className="erro">{erroSenha}</p> : null}
-      </section>
-
-      <section className="formulario">
-        <h3 style={{ margin: '0 0 0.5rem' }}>Calendário</h3>
-        <p style={{ margin: '0 0 0.75rem', color: 'var(--texto-fraco)', fontSize: '0.88rem' }}>
-          Exporte seus eventos salvos para Google Calendar, Apple Calendar ou Outlook.
-        </p>
-        <button type="button" onClick={exportarCalendario}>Exportar calendário (.ics)</button>
       </section>
     </main>
   );
