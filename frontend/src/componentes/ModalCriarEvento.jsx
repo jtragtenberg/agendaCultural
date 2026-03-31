@@ -4,6 +4,10 @@ import { api } from '../servicos/api';
 export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCriado }) {
   const [erro, setErro] = useState('');
 
+  const [textoIa, setTextoIa] = useState('');
+  const [extraindoIa, setExtraindoIa] = useState(false);
+  const [erroIa, setErroIa] = useState('');
+
   const [formulario, setFormulario] = useState({
     titulo: '',
     descricao: '',
@@ -110,6 +114,49 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
     }
   }
 
+  async function extrairComIa() {
+    if (!textoIa.trim()) return;
+    setExtraindoIa(true);
+    setErroIa('');
+    try {
+      const { extraido, locaisEncontrados, artistasEncontrados } = await api.extrairEvento(textoIa);
+
+      setFormulario((ant) => ({
+        ...ant,
+        titulo: extraido.titulo || ant.titulo,
+        descricao: extraido.descricao || ant.descricao,
+        data: extraido.data || ant.data,
+        horaInicio: extraido.horaInicio || ant.horaInicio,
+        horaFim: extraido.horaFim || ant.horaFim,
+      }));
+
+      if (locaisEncontrados.length > 0) {
+        selecionarLocal(locaisEncontrados[0]);
+      } else if (extraido.nomeLocal) {
+        setNovoLocal({
+          nome: extraido.nomeLocal || '',
+          endereco: extraido.enderecoLocal || '',
+          bairro: extraido.bairroLocal || '',
+          cidade: extraido.cidadeLocal || 'Recife',
+          latitude: '',
+          longitude: '',
+        });
+        setMostrarNovoLocal(true);
+      }
+
+      if (artistasEncontrados.length > 0) {
+        adicionarArtista(artistasEncontrados[0]);
+      } else if (extraido.nomeArtista) {
+        setNovoArtista((ant) => ({ ...ant, nome: extraido.nomeArtista }));
+        setMostrarNovoArtista(true);
+      }
+    } catch (e) {
+      setErroIa(e.message);
+    } finally {
+      setExtraindoIa(false);
+    }
+  }
+
   function handleBackdrop(e) {
     if (e.target === e.currentTarget) onFechar();
   }
@@ -123,6 +170,23 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
         </div>
 
         <form onSubmit={enviar} className="formulario">
+          <div className="ia-extracao">
+            <label htmlFor="ia-texto">Extrair com IA</label>
+            <textarea
+              id="ia-texto"
+              value={textoIa}
+              onChange={(e) => setTextoIa(e.target.value)}
+              placeholder="Cole aqui a descrição do evento (post do Instagram, notícia, texto curto)..."
+              rows={3}
+            />
+            <button type="button" onClick={extrairComIa} disabled={extraindoIa || !textoIa.trim()}>
+              {extraindoIa ? 'Extraindo...' : 'Preencher formulário com IA'}
+            </button>
+            {erroIa ? <p className="erro">{erroIa}</p> : null}
+          </div>
+
+          <hr className="ia-divisor" />
+
           <label>
             Título
             <input value={formulario.titulo} onChange={(e) => alterar('titulo', e.target.value)} required />

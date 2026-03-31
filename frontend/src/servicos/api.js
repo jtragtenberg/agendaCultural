@@ -232,5 +232,12 @@ export const api = {
       body: JSON.stringify(dados)
     }),
   adminApagarLocal: (id, token) =>
-    requisicao(`/admin/locais/${id}`, { method: 'DELETE', headers: cabecalhos(token) })
+    requisicao(`/admin/locais/${id}`, { method: 'DELETE', headers: cabecalhos(token) }),
+
+  extrairEvento: (texto) =>
+    requisicao('/ia/extrair-evento', {
+      method: 'POST',
+      headers: cabecalhos(),
+      body: JSON.stringify({ texto })
+    })
 };

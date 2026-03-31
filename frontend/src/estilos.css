@@ -1238,3 +1238,51 @@ button:disabled {
 .badge-status-aprovado { background: #d1fae5; color: #065f46; }
 .badge-status-rejeitado { background: #fee2e2; color: #991b1b; }
 .badge-status-sinalizado { background: #ffedd5; color: #92400e; }
+
+.ia-extracao {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ia-extracao label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #6c5bbf;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ia-extracao textarea {
+  resize: vertical;
+  min-height: 70px;
+  font-size: 0.9rem;
+}
+
+.ia-extracao button {
+  background: #6c5bbf;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  align-self: start;
+}
+
+.ia-extracao button:hover:not(:disabled) {
+  background: #5546a8;
+}
+
+.ia-extracao button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.ia-divisor {
+  border: none;
+  border-top: 1px solid rgba(122, 113, 201, 0.25);
+  margin: 0.25rem 0;
+}
