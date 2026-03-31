@@ -61,6 +61,17 @@ As tabelas usam nomes em português e UUID:
 
 Arquivo: `backend/prisma/schema.prisma`.
 
+## Interface
+
+A home page exibe um calendário unificado com duas camadas sobrepostas, ao estilo Google Calendar / iCal:
+
+- **Agenda Cultural Recife** (rosa) — todos os eventos aprovados
+- **Minha Agenda** (roxo) — eventos que o usuário adicionou à sua agenda pessoal
+
+Cada camada pode ser ativada ou desativada individualmente pela barra lateral esquerda. A busca por texto filtra apenas nos calendários visíveis.
+
+O botão `+` no canto superior direito de cada dia (visível quando logado) abre um modal para criar um evento, com a data já preenchida e horário padrão de 19h–21h.
+
 ## API principal
 
 Autenticação:

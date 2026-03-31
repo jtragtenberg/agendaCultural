@@ -12,8 +12,6 @@ export default function Cabecalho({ usuario, onSair, ehModerador }) {
       <nav>
         {usuario ? (
           <>
-            <Link to="/buscar-eventos">Buscar eventos</Link>
-            <Link to="/criar-evento">Criar evento</Link>
             {ehModerador ? <Link to="/moderacao">Moderação</Link> : null}
             <Link to="/perfil">Meu perfil</Link>
           </>
