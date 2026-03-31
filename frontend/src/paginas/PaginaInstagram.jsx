@@ -24,7 +24,8 @@ function FormLogin({ onConectado }) {
       if (!r.ok) throw new Error(dados.erro || 'Erro ao fazer login.');
       onConectado(dados.usuario);
     } catch (e) {
-      setErro(e.message);
+      const url = e.message.match(/https:\/\/\S+/)?.[0];
+      setErro({ texto: e.message, url });
     } finally {
       setCarregando(false);
     }
@@ -56,7 +57,21 @@ function FormLogin({ onConectado }) {
           autoComplete="current-password"
           required
         />
-        {erro && <p style={estilos.erroInline}>{erro}</p>}
+        {erro && (
+          <div style={estilos.erroInline}>
+            {erro.url ? (
+              <>
+                <p style={{margin:'0 0 0.4rem'}}>Instagram exigiu verificação de segurança.</p>
+                <a href={erro.url} target="_blank" rel="noreferrer" style={estilos.linkCheckpoint}>
+                  Clique aqui para verificar sua conta →
+                </a>
+                <p style={{margin:'0.4rem 0 0', fontSize:'0.8rem'}}>Depois de verificar, tente o login novamente.</p>
+              </>
+            ) : (
+              <p style={{margin:0}}>{erro.texto}</p>
+            )}
+          </div>
+        )}
         <button type="submit" style={estilos.botaoLogin} disabled={carregando}>
           {carregando ? 'Conectando...' : 'Conectar'}
         </button>
@@ -223,5 +238,6 @@ const estilos = {
   form: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
   input: { padding: '0.6rem 0.75rem', border: '1px solid #ccc', borderRadius: 6, fontSize: '0.95rem' },
   botaoLogin: { padding: '0.7rem', background: '#E1306C', color: '#fff', border: 'none', borderRadius: 6, fontSize: '1rem', cursor: 'pointer' },
-  erroInline: { color: '#c0392b', fontSize: '0.85rem', margin: 0 },
+  erroInline: { color: '#c0392b', fontSize: '0.85rem', background: '#fff3f3', border: '1px solid #ffcccc', borderRadius: 6, padding: '0.6rem 0.75rem' },
+  linkCheckpoint: { color: '#E1306C', fontWeight: 600, fontSize: '0.9rem' },
 };
