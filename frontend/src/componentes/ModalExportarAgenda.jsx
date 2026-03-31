@@ -139,6 +139,10 @@ export default function ModalExportarAgenda({ token, onFechar }) {
           <button className="btn-fechar-modal" onClick={onFechar}>✕</button>
         </div>
 
+        <p style={{ fontSize: '0.82rem', background: 'rgba(75,75,242,0.07)', border: '1px solid rgba(75,75,242,0.18)', borderRadius: 8, padding: '0.55rem 0.75rem', margin: '0 0 0.75rem', color: 'var(--texto)' }}>
+          Apenas eventos da sua <strong>agenda pessoal</strong> são exportados. Para incluir um evento aqui, adicione-o à sua agenda pessoal no calendário e volte a exportar.
+        </p>
+
         {ultimaStr ? (
           <p style={{ fontSize: '0.8rem', color: 'var(--texto-fraco)', margin: '0 0 0.75rem' }}>
             Última exportação: {ultimaStr}. Novos eventos pré-selecionados.
