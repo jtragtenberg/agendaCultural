@@ -75,14 +75,17 @@ add_var() {
   fi
 }
 
-add_var POSTGRES_DB      "agenda_cultural"
-add_var POSTGRES_USER    "postgres"
+add_var POSTGRES_DB       "agenda_cultural"
+add_var POSTGRES_USER     "postgres"
 add_var POSTGRES_PASSWORD "$(openssl rand -hex 16)"
-add_var JWT_SEGREDO      "$(openssl rand -hex 32)"
-add_var VITE_API_URL     "http://$IP_PUBLICO:3000"
+add_var JWT_SEGREDO       "$(openssl rand -hex 32)"
+add_var VITE_API_URL      "http://$IP_PUBLICO:3000"
 
 echo ""
-echo "  .env.prod em $APP_DIR/.env.prod"
+echo "  Valores ativos no .env.prod:"
+grep -v "^#" $APP_DIR/.env.prod | grep "=" | while IFS= read -r linha; do
+  echo "    $linha"
+done
 
 echo ""
 echo "✅ Setup concluído!"
