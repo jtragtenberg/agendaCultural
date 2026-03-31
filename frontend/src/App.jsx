@@ -9,6 +9,7 @@ import PaginaLocal from './paginas/PaginaLocal';
 import PaginaArtista from './paginas/PaginaArtista';
 import BuscarEventos from './paginas/BuscarEventos';
 import ModeracaoEventos from './paginas/ModeracaoEventos';
+import PaginaInstagram from './paginas/PaginaInstagram';
 
 const chaveSessao = 'agenda-cultural-recife:sessao';
 
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="/artistas/:id" element={<PaginaArtista token={token} />} />
         <Route path="/criar-evento" element={<CriarEvento token={token} />} />
         <Route path="/perfil" element={<Perfil sessao={sessao} onEntrar={entrar} />} />
+        <Route path="/instagram" element={<PaginaInstagram />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
