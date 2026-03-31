@@ -60,13 +60,16 @@ IP_PUBLICO=$(curl -s ifconfig.me)
 touch $APP_DIR/.env.prod
 chmod 600 $APP_DIR/.env.prod
 
-# Adiciona variável ao .env.prod se ainda não existir
+# Adiciona ou corrige variável no .env.prod se estiver ausente ou vazia
 add_var() {
   local key=$1
   local value=$2
-  if ! grep -q "^${key}=" $APP_DIR/.env.prod; then
+  local existing
+  existing=$(grep "^${key}=" $APP_DIR/.env.prod 2>/dev/null | cut -d= -f2-)
+  if [ -z "$existing" ]; then
+    sed -i "/^${key}=/d" $APP_DIR/.env.prod
     echo "${key}=${value}" >> $APP_DIR/.env.prod
-    echo "  + $key adicionado"
+    echo "  + $key definido"
   else
     echo "  ✓ $key já definido"
   fi
