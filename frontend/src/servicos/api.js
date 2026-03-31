@@ -167,6 +167,20 @@ export const api = {
       headers: cabecalhos(token)
     }),
 
+  atualizarPerfil: (dados, token) =>
+    requisicao('/usuarios/me', {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+
+  alterarSenha: (dados, token) =>
+    requisicao('/usuarios/me/senha', {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+
   seguirUsuario: (usuarioId, token) =>
     requisicao(`/seguir/${usuarioId}`, {
       method: 'POST',

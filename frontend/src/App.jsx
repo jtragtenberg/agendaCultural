@@ -8,6 +8,7 @@ import PaginaLocal from './paginas/PaginaLocal';
 import PaginaArtista from './paginas/PaginaArtista';
 import ModeracaoEventos from './paginas/ModeracaoEventos';
 import PaginaInstagram from './paginas/PaginaInstagram';
+import Configuracoes from './paginas/Configuracoes';
 
 const chaveSessao = 'agenda-cultural-recife:sessao';
 
@@ -34,6 +35,14 @@ export default function App() {
     localStorage.removeItem(chaveSessao);
   }
 
+  function atualizarUsuario(novosDados) {
+    setSessao((ant) => {
+      const nova = { ...ant, usuario: { ...ant.usuario, ...novosDados } };
+      localStorage.setItem(chaveSessao, JSON.stringify(nova));
+      return nova;
+    });
+  }
+
   const token = useMemo(() => sessao?.token, [sessao]);
   const ehModerador = useMemo(
     () => Boolean(sessao?.usuario?.verificado || Number(sessao?.usuario?.reputacao || 0) >= 200),
@@ -51,6 +60,7 @@ export default function App() {
         <Route path="/locais/:id" element={<PaginaLocal token={token} />} />
         <Route path="/artistas/:id" element={<PaginaArtista token={token} />} />
         <Route path="/perfil" element={<Perfil sessao={sessao} onEntrar={entrar} />} />
+        <Route path="/configuracoes" element={<Configuracoes sessao={sessao} token={token} onAtualizarUsuario={atualizarUsuario} />} />
         <Route path="/instagram" element={<PaginaInstagram />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
