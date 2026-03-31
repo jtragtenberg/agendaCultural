@@ -182,6 +182,73 @@ Serviços:
 - Backend: `http://localhost:3000`
 - PostgreSQL: `localhost:5432`
 
+## Deploy em produção (VPS)
+
+### 1. Setup inicial do servidor (uma vez só)
+
+Na sua máquina local, com acesso SSH ao servidor:
+
+```bash
+ssh root@104.131.127.99 'bash -s' < setup-servidor.sh
+```
+
+Isso instala Docker, configura o firewall e clona o repositório.
+
+> Antes de rodar, edite `REPO_URL` dentro de `setup-servidor.sh`.
+
+### 2. Configurar variáveis de ambiente no servidor
+
+```bash
+ssh root@104.131.127.99
+cd /opt/agenda-cultural
+cp .env.prod.exemplo .env.prod
+nano .env.prod   # preencha POSTGRES_PASSWORD, JWT_SEGREDO, VITE_API_URL
+```
+
+Gere o JWT secret com:
+```bash
+openssl rand -hex 32
+```
+
+### 3. Primeiro deploy
+
+```bash
+ssh root@104.131.127.99
+cd /opt/agenda-cultural
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+Inicializar o banco (uma vez só):
+```bash
+docker compose -f docker-compose.prod.yml exec backend npm run prisma:seed
+```
+
+### 4. Deploys seguintes
+
+Na sua máquina local, após um `git push`:
+
+```bash
+./deploy.sh
+```
+
+O script faz SSH no servidor, faz `git pull`, rebuilda e reinicia os containers.
+
+### Portas abertas no servidor
+
+| Porta | Serviço |
+|---|---|
+| 80 | Frontend (Nginx) |
+| 3000 | Backend API |
+| 22 | SSH |
+
+### URLs de produção
+
+- Frontend: `http://104.131.127.99`
+- API: `http://104.131.127.99:3000/saude`
+- Instagram: `http://104.131.127.99/instagram`
+
+---
+
 ## Observações
 
 - O endpoint `.ics` é compatível com Google Calendar, Apple Calendar e Outlook.
