@@ -1,11 +1,24 @@
+# Dependências
 node_modules
-.env
-.env.local
-.DS_Store
 backend/node_modules
 frontend/node_modules
-backend/prisma/dev.db
+
+# Variáveis de ambiente
+.env
+.env.local
 .env.prod
+
+# macOS
+.DS_Store
+
+# Banco local
+backend/prisma/dev.db
+
+# Instagram — dados gerados e sessão
 dados/.sessao/
 dados/instagram_posts.json
 dados/instagram_posts.md
+dados/instagram_log.txt
+
+# Codex
+.codex/
