@@ -8,21 +8,9 @@ const rotas = express.Router();
 
 rotas.get('/', autenticarOpcional, async (req, res) => {
   try {
-    const incluirNaoAprovadosDoCriador = req.usuario?.id;
-
     const eventos = await prisma.evento.findMany({
       where: {
-        OR: [
-          { status: 'aprovado' },
-          incluirNaoAprovadosDoCriador
-            ? {
-                AND: [
-                  { criadoPor: incluirNaoAprovadosDoCriador },
-                  { status: { in: ['pendente', 'sinalizado', 'rejeitado', 'aprovado'] } }
-                ]
-              }
-            : undefined
-        ].filter(Boolean)
+        status: { not: 'rejeitado' }
       },
       include: {
         local: true,
