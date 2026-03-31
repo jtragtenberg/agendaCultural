@@ -53,30 +53,33 @@ fi
 echo "=== Criando diretório de dados ==="
 mkdir -p $APP_DIR/dados/.sessao
 
-echo "=== Gerando .env.prod ==="
-if [ -f "$APP_DIR/.env.prod" ]; then
-  echo ".env.prod já existe — mantendo credenciais existentes"
-else
-  IP_PUBLICO=$(curl -s ifconfig.me)
-  POSTGRES_PASSWORD=$(openssl rand -hex 16)
-  JWT_SEGREDO=$(openssl rand -hex 32)
+echo "=== Verificando .env.prod ==="
+IP_PUBLICO=$(curl -s ifconfig.me)
 
-  cat > $APP_DIR/.env.prod << EOF
-POSTGRES_DB=agenda_cultural
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-JWT_SEGREDO=$JWT_SEGREDO
-VITE_API_URL=http://$IP_PUBLICO:3000
-EOF
+# Garante que o arquivo existe
+touch $APP_DIR/.env.prod
+chmod 600 $APP_DIR/.env.prod
 
-  chmod 600 $APP_DIR/.env.prod
+# Adiciona variável ao .env.prod se ainda não existir
+add_var() {
+  local key=$1
+  local value=$2
+  if ! grep -q "^${key}=" $APP_DIR/.env.prod; then
+    echo "${key}=${value}" >> $APP_DIR/.env.prod
+    echo "  + $key adicionado"
+  else
+    echo "  ✓ $key já definido"
+  fi
+}
 
-  echo ""
-  echo "  ⚠️  Credenciais geradas — guarde em lugar seguro:"
-  echo "  POSTGRES_PASSWORD: $POSTGRES_PASSWORD"
-  echo "  JWT_SEGREDO:       $JWT_SEGREDO"
-  echo "  VITE_API_URL:      http://$IP_PUBLICO:3000"
-fi
+add_var POSTGRES_DB      "agenda_cultural"
+add_var POSTGRES_USER    "postgres"
+add_var POSTGRES_PASSWORD "$(openssl rand -hex 16)"
+add_var JWT_SEGREDO      "$(openssl rand -hex 32)"
+add_var VITE_API_URL     "http://$IP_PUBLICO:3000"
+
+echo ""
+echo "  .env.prod em $APP_DIR/.env.prod"
 
 echo ""
 echo "✅ Setup concluído!"
