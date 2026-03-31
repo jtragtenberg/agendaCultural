@@ -82,7 +82,7 @@ export default function ModalExportarAgenda({ token, onFechar }) {
             .filter((item) => !ultimaExportacao || new Date(item.criadoEm) > new Date(ultimaExportacao))
             .map((item) => item.id)
         );
-        setSelecionados(padrao.size > 0 ? padrao : new Set(futuros.map((i) => i.id)));
+        setSelecionados(padrao);
       })
       .catch((e) => setErro(e.message));
   }, [token, ultimaExportacao]);
