@@ -20,7 +20,8 @@ dados/instagram_posts.json
 dados/instagram_posts.md
 dados/instagram_log.txt
 
-# Codex
+# IAs
 .codex/
+.claude/
 
 dump.sql
