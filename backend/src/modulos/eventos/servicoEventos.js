@@ -54,9 +54,9 @@ async function validarLimiteNovato(usuarioId) {
 
 async function validarDuplicidade({ localId, data, titulo }) {
   const inicio = new Date(data);
-  inicio.setHours(0, 0, 0, 0);
+  inicio.setUTCHours(0, 0, 0, 0);
   const fim = new Date(inicio);
-  fim.setDate(fim.getDate() + 1);
+  fim.setUTCDate(fim.getUTCDate() + 1);
 
   const candidatos = await prisma.evento.findMany({
     where: {
