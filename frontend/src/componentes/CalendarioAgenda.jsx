@@ -24,7 +24,7 @@ function chaveData(ano, mes, dia) {
 
 function dataParaChave(dataEntrada) {
   const data = new Date(dataEntrada);
-  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+  return `${data.getUTCFullYear()}-${String(data.getUTCMonth() + 1).padStart(2, '0')}-${String(data.getUTCDate()).padStart(2, '0')}`;
 }
 
 function dataInicial(agenda) {

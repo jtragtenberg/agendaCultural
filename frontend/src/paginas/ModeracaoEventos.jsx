@@ -204,7 +204,7 @@ export default function ModeracaoEventos({ token, ehModerador }) {
                 <strong>Criado por:</strong> {evento.criador?.nome}
               </p>
               <p>
-                <strong>Data/Hora:</strong> {new Date(evento.data).toLocaleDateString('pt-BR')} - {evento.horaInicio}
+                <strong>Data/Hora:</strong> {new Date(evento.data).toLocaleDateString('pt-BR', { timeZone: 'America/Recife' })} - {evento.horaInicio}
               </p>
               <p>
                 <strong>Local:</strong> {evento.local?.nome}

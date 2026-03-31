@@ -95,7 +95,7 @@ export default function PaginaEvento({ token }) {
         <Link to={`/locais/${evento.local.id}`}>{evento.local.nome}</Link> - {evento.local.endereco}
       </p>
       <p>
-        <strong>Data:</strong> {new Date(evento.data).toLocaleDateString('pt-BR')}
+        <strong>Data:</strong> {new Date(evento.data).toLocaleDateString('pt-BR', { timeZone: 'America/Recife' })}
       </p>
       <p>
         <strong>Horário:</strong> {evento.horaInicio} {evento.horaFim ? `às ${evento.horaFim}` : ''}

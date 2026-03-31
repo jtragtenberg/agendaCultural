@@ -11,19 +11,18 @@ function escapeIcs(texto) {
     .replace(/\n/g, '\\n');
 }
 
-function dataParaIcsUtc(data, hora) {
+// Retorna string no formato ICS com fuso de Recife (sem conversão para UTC)
+// para ser usada com DTSTART;TZID=America/Recife:
+function dataParaIcsRecife(data, hora) {
   const [hh, mm] = (hora || '00:00').split(':').map(Number);
   const base = new Date(data);
-  base.setHours(hh, mm, 0, 0);
-
   const yyyy = base.getUTCFullYear();
   const MM = String(base.getUTCMonth() + 1).padStart(2, '0');
   const dd = String(base.getUTCDate()).padStart(2, '0');
-  const HH = String(base.getUTCHours()).padStart(2, '0');
-  const mmUtc = String(base.getUTCMinutes()).padStart(2, '0');
-  const ss = String(base.getUTCSeconds()).padStart(2, '0');
+  const HH = String(hh).padStart(2, '0');
+  const mmStr = String(mm).padStart(2, '0');
 
-  return `${yyyy}${MM}${dd}T${HH}${mmUtc}${ss}Z`;
+  return `${yyyy}${MM}${dd}T${HH}${mmStr}00`;
 }
 
 rotas.get('/:id/calendario.ics', async (req, res) => {
@@ -50,15 +49,24 @@ rotas.get('/:id/calendario.ics', async (req, res) => {
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//Agenda Cultural do Recife//PT-BR',
-      'CALSCALE:GREGORIAN'
+      'CALSCALE:GREGORIAN',
+      'BEGIN:VTIMEZONE',
+      'TZID:America/Recife',
+      'BEGIN:STANDARD',
+      'TZOFFSETFROM:-0300',
+      'TZOFFSETTO:-0300',
+      'TZNAME:BRT',
+      'DTSTART:19700101T000000',
+      'END:STANDARD',
+      'END:VTIMEZONE'
     ];
 
     agenda.forEach(({ evento }) => {
       linhas.push('BEGIN:VEVENT');
       linhas.push(`UID:${evento.id}@agendaculturalrecife.local`);
-      linhas.push(`DTSTAMP:${dataParaIcsUtc(new Date(), '00:00')}`);
-      linhas.push(`DTSTART:${dataParaIcsUtc(evento.data, evento.horaInicio)}`);
-      linhas.push(`DTEND:${dataParaIcsUtc(evento.data, evento.horaFim || evento.horaInicio)}`);
+      linhas.push(`DTSTAMP:${dataParaIcsRecife(new Date(), '00:00')}`);
+      linhas.push(`DTSTART;TZID=America/Recife:${dataParaIcsRecife(evento.data, evento.horaInicio)}`);
+      linhas.push(`DTEND;TZID=America/Recife:${dataParaIcsRecife(evento.data, evento.horaFim || evento.horaInicio)}`);
       linhas.push(`SUMMARY:${escapeIcs(evento.titulo)}`);
       linhas.push(`DESCRIPTION:${escapeIcs(evento.descricao)}`);
       linhas.push(`LOCATION:${escapeIcs(`${evento.local.nome} - ${evento.local.endereco}`)}`);
