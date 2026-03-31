@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agenda_cultural_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agenda_cultural}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obrigatório}
+    volumes:
+      - dados_postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-agenda_cultural}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: agenda_cultural_backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agenda_cultural}
+      PORTA: 3000
+      JWT_SEGREDO: ${JWT_SEGREDO:?JWT_SEGREDO obrigatório}
+      INSTAGRAM_JSON_PATH: /dados/instagram_posts.json
+      SCRAPER_URL: http://scraper:5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      scraper:
+        condition: service_started
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./dados:/dados
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL obrigatório}
+    container_name: agenda_cultural_frontend
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  scraper:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile
+    container_name: agenda_cultural_scraper
+    environment:
+      TZ: America/Recife
+      SESSAO_DIR: /dados/.sessao
+    volumes:
+      - ./scripts:/scripts
+      - ./dados:/dados
+    restart: unless-stopped
+
+volumes:
+  dados_postgres:
