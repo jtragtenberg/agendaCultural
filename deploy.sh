@@ -15,8 +15,9 @@ ssh $SERVIDOR "
   set -e
   cd $APP_DIR
 
-  echo '→ Git pull...'
-  git pull
+  echo '→ Git pull (branch: main)...'
+  git checkout main
+  git pull origin main
 
   echo '→ Rebuilding e reiniciando containers...'
   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
