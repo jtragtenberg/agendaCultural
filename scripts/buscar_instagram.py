@@ -17,7 +17,12 @@ import glob
 import random
 from datetime import datetime
 
-PERFIS = [
+PASTA_DADOS = os.path.join(os.path.dirname(__file__), "..", "dados")
+SESSAO_DIR = os.path.join(PASTA_DADOS, ".sessao")
+JSON_PATH = os.path.join(PASTA_DADOS, "instagram_posts.json")
+PERFIS_PATH = os.path.join(PASTA_DADOS, "perfis.json")
+
+PERFIS_PADRAO = [
     "terra_polocultural",
     "casa.lontra",
     "caixaculturalrecife",
@@ -26,16 +31,19 @@ PERFIS = [
     "cabuetacultural",
 ]
 
-PASTA_DADOS = os.path.join(os.path.dirname(__file__), "..", "dados")
-SESSAO_DIR = os.path.join(PASTA_DADOS, ".sessao")
-JSON_PATH = os.path.join(PASTA_DADOS, "instagram_posts.json")
-
 # Limites para não disparar detecção
 JANELA_VERIFICACAO = 10   # quantos posts recentes do perfil verificar por execução
 MAX_NOVOS_POR_PERFIL = 5  # máx posts novos a baixar por execução (dos encontrados na janela)
 PAUSA_ENTRE_POSTS = (2, 5)    # segundos entre posts (min, max)
 PAUSA_ENTRE_PERFIS = (8, 20)  # segundos entre perfis (min, max)
 MAX_TENTATIVAS = 3            # tentativas em caso de erro
+
+
+def carregar_perfis():
+    if os.path.exists(PERFIS_PATH):
+        with open(PERFIS_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return PERFIS_PADRAO
 
 
 def pausa(intervalo=PAUSA_ENTRE_POSTS):
@@ -73,23 +81,35 @@ def carregar_loader():
 
 def carregar_salvos():
     if not os.path.exists(JSON_PATH):
-        return {}
+        return {}, {}
     with open(JSON_PATH, encoding="utf-8") as f:
         dados = json.load(f)
-    return {
+    posts_por_perfil = {
         p["handle"]: {post["shortcode"]: post for post in p["posts"]}
         for p in dados.get("perfis", [])
     }
+    fotos_por_perfil = {
+        p["handle"]: p.get("foto")
+        for p in dados.get("perfis", [])
+    }
+    return posts_por_perfil, fotos_por_perfil
 
 
 def buscar_posts_novos(perfil, loader, ja_salvos):
+    """Retorna (lista_de_novos_posts, foto_perfil_url)."""
     existentes = ja_salvos.get(perfil, {})
     novos = []
+    foto = None
     tentativa = 0
 
     while tentativa < MAX_TENTATIVAS:
         try:
             profile = instaloader.Profile.from_username(loader.context, perfil)
+
+            try:
+                foto = profile.profile_pic_url
+            except Exception:
+                pass
 
             # 1. Coleta os últimos JANELA_VERIFICACAO posts do perfil
             janela = []
@@ -166,7 +186,7 @@ def buscar_posts_novos(perfil, loader, ja_salvos):
             print(f"  Erro em @{perfil}: {e} — aguardando {espera}s ({tentativa}/{MAX_TENTATIVAS})")
             time.sleep(espera)
 
-    return novos
+    return novos, foto
 
 
 def mesclar(perfil, novos, ja_salvos):
@@ -177,7 +197,8 @@ def mesclar(perfil, novos, ja_salvos):
 def salvar_markdown(todos_posts, caminho):
     agora = datetime.now().strftime("%d/%m/%Y às %H:%M")
     linhas = ["# Posts do Instagram\n", f"_Atualizado em: {agora}_\n"]
-    for perfil, posts in todos_posts.items():
+    for perfil, dados in todos_posts.items():
+        posts = dados["posts"]
         linhas.append(f"\n---\n\n## [@{perfil}](https://www.instagram.com/{perfil}/)\n")
         if not posts:
             linhas.append("_Nenhum post encontrado._\n")
@@ -196,8 +217,13 @@ def salvar_json(todos_posts, caminho):
     dados = {
         "atualizadoEm": datetime.now().isoformat(),
         "perfis": [
-            {"handle": h, "url": f"https://www.instagram.com/{h}/", "posts": p}
-            for h, p in todos_posts.items()
+            {
+                "handle": h,
+                "url": f"https://www.instagram.com/{h}/",
+                "foto": d.get("foto"),
+                "posts": d["posts"],
+            }
+            for h, d in todos_posts.items()
         ],
     }
     with open(caminho, "w", encoding="utf-8") as f:
@@ -207,8 +233,9 @@ def salvar_json(todos_posts, caminho):
 
 if __name__ == "__main__":
     os.makedirs(PASTA_DADOS, exist_ok=True)
+    PERFIS = carregar_perfis()
     loader = carregar_loader()
-    ja_salvos = carregar_salvos()
+    ja_salvos, fotos_salvas = carregar_salvos()
 
     # Ordem aleatória para não criar padrão previsível
     perfis_embaralhados = PERFIS[:]
@@ -217,9 +244,12 @@ if __name__ == "__main__":
     todos_posts = {}
     for i, perfil in enumerate(perfis_embaralhados):
         print(f"Buscando @{perfil}...")
-        novos = buscar_posts_novos(perfil, loader, ja_salvos)
-        todos_posts[perfil] = mesclar(perfil, novos, ja_salvos)
-        print(f"  {len(novos)} novos | {len(todos_posts[perfil])} total")
+        novos, foto = buscar_posts_novos(perfil, loader, ja_salvos)
+        todos_posts[perfil] = {
+            "foto": foto or fotos_salvas.get(perfil),
+            "posts": mesclar(perfil, novos, ja_salvos),
+        }
+        print(f"  {len(novos)} novos | {len(todos_posts[perfil]['posts'])} total")
 
         if i < len(perfis_embaralhados) - 1:
             pausa(PAUSA_ENTRE_PERFIS)
