@@ -27,7 +27,10 @@ backend/
       seguidores/
       moderacao/
       calendario/
+      instagram/
 frontend/
+scripts/           ← scraper Python do Instagram
+dados/             ← posts JSON + sessão + lista de perfis
 docker-compose.yml
 ```
 
@@ -63,6 +66,8 @@ Arquivo: `backend/prisma/schema.prisma`.
 
 ## Interface
 
+### Home — calendário unificado
+
 A home page exibe um calendário unificado com duas camadas sobrepostas, ao estilo Google Calendar / iCal:
 
 - **Agenda Cultural Recife** (rosa) — todos os eventos aprovados
@@ -71,6 +76,25 @@ A home page exibe um calendário unificado com duas camadas sobrepostas, ao esti
 Cada camada pode ser ativada ou desativada individualmente pela barra lateral esquerda. A busca por texto filtra apenas nos calendários visíveis.
 
 O botão `+` no canto superior direito de cada dia (visível quando logado) abre um modal para criar um evento, com a data já preenchida e horário padrão de 19h–21h.
+
+### Configurações do usuário
+
+Ao fazer login, o usuário é redirecionado para a home. No cabeçalho, clicar no nome abre um dropdown com:
+
+- **Configurações** (`/configuracoes`) — editar nome e bio, trocar senha
+- **Exportar agenda** — modal para exportar eventos futuros como `.ics`, com seleção individual e memória da última exportação
+- **Moderação** — visível apenas para moderadores
+- **Sair**
+
+### Feed do Instagram
+
+A página `/instagram` exibe um feed cronológico único (mais recente primeiro) de posts coletados de perfis monitorados:
+
+- Scroll infinito — carrega 20 posts por vez ao chegar no fim
+- Cada card exibe: foto de perfil, @handle linkado, data, thumbnail e legenda (expansível)
+- Posts novos desde a última visita recebem badge **novo** e a página rola automaticamente até o primeiro não visto (rastreado via `localStorage`)
+- Barra lateral com lista de perfis monitorados e formulário para adicionar novos
+- Botão **Atualizar** dispara a busca no container scraper (processo assíncrono, leva ~1 min)
 
 ## API principal
 
@@ -84,6 +108,11 @@ Eventos:
 - `GET /eventos`
 - `GET /eventos/:id`
 - `POST /eventos`
+- `PUT /eventos/:id/editar`
+- `DELETE /eventos/:id`
+- `POST /eventos/:id/aprovar`
+- `POST /eventos/:id/rejeitar`
+- `POST /eventos/:id/denunciar`
 
 Artistas:
 
@@ -102,6 +131,7 @@ Locais:
 Agenda:
 
 - `POST /agenda/adicionar`
+- `DELETE /agenda/remover/:eventoId`
 - `GET /agenda/minha`
 
 Seguidores:
@@ -109,18 +139,27 @@ Seguidores:
 - `POST /seguir/:usuarioId`
 - `GET /seguindo`
 
-Denúncias:
+Usuários:
 
-- `POST /eventos/:id/denunciar`
-
-Calendário:
-
+- `GET /usuarios/:id`
+- `PUT /usuarios/me`
+- `PUT /usuarios/me/senha`
 - `GET /usuarios/:id/calendario.ics`
 
-Moderacao extra:
+Moderação:
 
-- `POST /eventos/:id/aprovar`
-- `POST /eventos/:id/rejeitar`
+- `GET /eventos/moderacao/nao-moderados`
+- `GET /eventos/moderacao/locais`
+- `GET /eventos/moderacao/artistas`
+
+Instagram:
+
+- `GET /instagram/posts?pagina=1&limite=20`
+- `GET /instagram/perfis`
+- `POST /instagram/perfis`
+- `POST /instagram/atualizar`
+- `GET /instagram/sessao`
+- `POST /instagram/login`
 
 ## Seed de dados
 
@@ -286,8 +325,26 @@ A busca automática roda todo dia às 16h20 (horário de Recife) via container `
 
 ---
 
+## Feed do Instagram — scraper
+
+Os posts são coletados pelo container `scraper` (Python + instaloader) e salvos em `dados/instagram_posts.json`. A lista de perfis monitorados fica em `dados/perfis.json`.
+
+A busca automática roda todo dia às **16h20 (horário de Recife)**. Para rodar manualmente:
+
+```bash
+# via Docker
+docker exec agenda_cultural_scraper python3 /scripts/buscar_instagram.py
+
+# local
+python3 scripts/buscar_instagram.py
+```
+
+Para adicionar perfis: use o formulário na própria página `/instagram` ou edite `dados/perfis.json` diretamente.
+
+---
+
 ## Observações
 
 - O endpoint `.ics` é compatível com Google Calendar, Apple Calendar e Outlook.
 - A agenda pessoal referencia eventos existentes (`agenda_eventos`), sem duplicação de evento.
-- A tela de perfil mostra agenda própria e agenda de pessoas seguidas.
+- Todos os horários são armazenados em UTC no banco e exibidos no fuso de Recife (UTC-3).

@@ -55,6 +55,12 @@ def fazer_login():
         return jsonify({"erro": str(e)}), 500
 
 
+@app.route("/buscar", methods=["POST"])
+def iniciar_busca():
+    threading.Thread(target=rodar_scraper, daemon=True).start()
+    return jsonify({"ok": True, "mensagem": "Busca iniciada. Leva cerca de 1 minuto."})
+
+
 # ── Agendador ──────────────────────────────────────────────────────────────────
 
 def rodar_scraper():
