@@ -72,7 +72,7 @@ export default function PaginaArtista({ token }) {
         {artista.eventos.map((evento) => (
           <li key={evento.id}>
             <Link to={`/evento/${evento.id}`}>
-              {evento.titulo} - {new Date(evento.data).toLocaleDateString('pt-BR')} em {evento.local.nome}
+              {evento.titulo} - {new Date(evento.data).toLocaleDateString('pt-BR', { timeZone: 'America/Recife' })} em {evento.local.nome}
             </Link>
           </li>
         ))}

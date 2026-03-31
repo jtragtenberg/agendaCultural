@@ -82,7 +82,7 @@ export default function PaginaLocal({ token }) {
         {local.eventos.map((evento) => (
           <li key={evento.id}>
             <Link to={`/evento/${evento.id}`}>
-              {evento.titulo} - {new Date(evento.data).toLocaleDateString('pt-BR')} ({evento.horaInicio})
+              {evento.titulo} - {new Date(evento.data).toLocaleDateString('pt-BR', { timeZone: 'America/Recife' })} ({evento.horaInicio})
             </Link>
           </li>
         ))}
