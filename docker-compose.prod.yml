@@ -24,6 +24,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agenda_cultural}
       PORTA: 3000
       JWT_SEGREDO: ${JWT_SEGREDO:?JWT_SEGREDO obrigatório}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       INSTAGRAM_JSON_PATH: /dados/instagram_posts.json
       SCRAPER_URL: http://scraper:5000
     depends_on:
