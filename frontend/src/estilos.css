@@ -481,6 +481,177 @@ button:disabled {
   padding-left: 1rem;
 }
 
+/* ── Home page layout ─────────────────────────────────────────────────────── */
+
+.home-layout {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+.home-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  position: sticky;
+  top: 5rem;
+}
+
+.home-calendario {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-secao {
+  background: linear-gradient(165deg, rgba(247, 244, 255, 0.94) 0%, rgba(239, 235, 255, 0.88) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(122, 113, 201, 0.5);
+  box-shadow: var(--sombra);
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sidebar-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-fraco);
+  margin: 0;
+}
+
+.camada-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  user-select: none;
+}
+
+.camada-toggle input[type='checkbox'] {
+  width: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.camada-cor {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ── Botão + no dia ───────────────────────────────────────────────────────── */
+
+.calendario-celula .btn-criar-dia {
+  background: rgba(75, 75, 242, 0.08);
+  border: 1px solid rgba(75, 75, 242, 0.28);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  min-width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primaria);
+  box-shadow: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.calendario-celula .btn-criar-dia:hover {
+  background: rgba(75, 75, 242, 0.18);
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Botão salvar na agenda (mini) ────────────────────────────────────────── */
+
+.btn-salvar-agenda {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  box-shadow: none;
+  margin-top: 0.2rem;
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 16, 60, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+  backdrop-filter: blur(2px);
+}
+
+.modal-conteudo {
+  background: linear-gradient(165deg, #f9f7ff 0%, #f0ecff 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(122, 113, 201, 0.5);
+  box-shadow: 0 20px 60px rgba(50, 40, 130, 0.28);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.modal-topo h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.modal-conteudo .btn-fechar-modal {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--texto-fraco);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.modal-conteudo .btn-fechar-modal:hover {
+  background: rgba(0, 0, 0, 0.06);
+  transform: none;
+  box-shadow: none;
+}
+
+.grade-horas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* ── Responsivo ───────────────────────────────────────────────────────────── */
+
 @media (max-width: 900px) {
   .calendario-grade {
     grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -492,6 +663,22 @@ button:disabled {
 
   .calendario-celula {
     min-height: auto;
+  }
+
+  .home-layout {
+    flex-direction: column;
+  }
+
+  .home-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
+  }
+
+  .sidebar-secao {
+    flex: 1;
+    min-width: 160px;
   }
 }
 
@@ -505,6 +692,10 @@ button:disabled {
   }
 
   .container {
+    padding: 0.9rem;
+  }
+
+  .home-layout {
     padding: 0.9rem;
   }
 }

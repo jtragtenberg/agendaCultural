@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Cabecalho from './componentes/Cabecalho';
-import Inicio from './paginas/Inicio';
+import Home from './paginas/Home';
 import PaginaEvento from './paginas/PaginaEvento';
-import CriarEvento from './paginas/CriarEvento';
 import Perfil from './paginas/Perfil';
 import PaginaLocal from './paginas/PaginaLocal';
 import PaginaArtista from './paginas/PaginaArtista';
-import BuscarEventos from './paginas/BuscarEventos';
 import ModeracaoEventos from './paginas/ModeracaoEventos';
 import PaginaInstagram from './paginas/PaginaInstagram';
 
@@ -47,13 +45,11 @@ export default function App() {
       <Cabecalho usuario={sessao?.usuario} onSair={sair} ehModerador={ehModerador} />
 
       <Routes>
-        <Route path="/" element={token ? <Inicio token={token} /> : <BuscarEventos token={token} />} />
-        <Route path="/buscar-eventos" element={<BuscarEventos token={token} />} />
+        <Route path="/" element={<Home token={token} />} />
         <Route path="/moderacao" element={<ModeracaoEventos token={token} ehModerador={ehModerador} />} />
         <Route path="/evento/:id" element={<PaginaEvento token={token} />} />
         <Route path="/locais/:id" element={<PaginaLocal token={token} />} />
         <Route path="/artistas/:id" element={<PaginaArtista token={token} />} />
-        <Route path="/criar-evento" element={<CriarEvento token={token} />} />
         <Route path="/perfil" element={<Perfil sessao={sessao} onEntrar={entrar} />} />
         <Route path="/instagram" element={<PaginaInstagram />} />
         <Route path="*" element={<Navigate to="/" replace />} />
