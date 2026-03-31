@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const { autenticarObrigatorio } = require('../../middlewares');
 
 const roteador = express.Router();
 
@@ -15,7 +16,7 @@ const SESSAO_DIR = process.env.INSTAGRAM_SESSAO_DIR
 
 const SCRAPER_URL = process.env.SCRAPER_URL || 'http://scraper:5000';
 
-// GET /instagram/posts?pagina=1&limite=20
+// GET /instagram/posts?pagina=1&limite=20&perfis=handle1,handle2
 // Retorna feed plano ordenado por data (mais recente primeiro) com paginação
 roteador.get('/instagram/posts', (req, res) => {
   if (!fs.existsSync(JSON_PATH)) {
@@ -26,9 +27,15 @@ roteador.get('/instagram/posts', (req, res) => {
   try {
     const dados = JSON.parse(fs.readFileSync(JSON_PATH, 'utf-8'));
 
+    // Filtro opcional por perfis (query param ?perfis=handle1,handle2)
+    const filtro = req.query.perfis
+      ? req.query.perfis.split(',').map(h => h.trim().toLowerCase()).filter(Boolean)
+      : null;
+
     // Achata todos os posts com info do perfil embutida
     const todos = [];
     for (const perfil of (dados.perfis || [])) {
+      if (filtro && !filtro.includes(perfil.handle)) continue;
       for (const post of (perfil.posts || [])) {
         todos.push({
           ...post,
@@ -96,6 +103,30 @@ roteador.post('/instagram/perfis', (req, res) => {
     res.status(201).json({ handle: normalizado, perfis });
   } catch {
     res.status(500).json({ erro: 'Erro ao salvar lista de perfis.' });
+  }
+});
+
+// DELETE /instagram/perfis/:handle — remove perfil (moderador ou admin)
+roteador.delete('/instagram/perfis/:handle', autenticarObrigatorio, (req, res) => {
+  const { funcao, verificado, reputacao } = req.usuario || {};
+  const ehGestor = funcao === 'administrador' || funcao === 'moderador' || verificado || reputacao >= 200;
+  if (!ehGestor) {
+    return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+  }
+  const handle = req.params.handle.toLowerCase();
+  try {
+    let perfis = [];
+    if (fs.existsSync(PERFIS_PATH)) {
+      perfis = JSON.parse(fs.readFileSync(PERFIS_PATH, 'utf-8'));
+    }
+    const novos = perfis.filter(p => p !== handle);
+    if (novos.length === perfis.length) {
+      return res.status(404).json({ erro: 'Perfil não encontrado.' });
+    }
+    fs.writeFileSync(PERFIS_PATH, JSON.stringify(novos, null, 2));
+    return res.json({ perfis: novos });
+  } catch {
+    return res.status(500).json({ erro: 'Erro ao remover perfil.' });
   }
 });
 

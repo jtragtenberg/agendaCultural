@@ -72,7 +72,7 @@ export default function App() {
         <Route path="/artistas/:id" element={<PaginaArtista token={token} />} />
         <Route path="/perfil" element={<Perfil sessao={sessao} onEntrar={entrar} />} />
         <Route path="/configuracoes" element={<Configuracoes sessao={sessao} token={token} onAtualizarUsuario={atualizarUsuario} />} />
-        <Route path="/instagram" element={<PaginaInstagram />} />
+        <Route path="/instagram" element={<PaginaInstagram sessao={sessao} />} />
         <Route path="/admin" element={<PaginaAdmin token={token} ehAdmin={ehAdmin} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

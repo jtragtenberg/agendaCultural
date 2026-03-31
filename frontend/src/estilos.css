@@ -896,16 +896,57 @@ button:disabled {
   gap: 0.3rem;
 }
 
+.instagram-perfis-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.instagram-perfil-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+
+.instagram-perfil-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
 .instagram-perfis-lista li a {
   font-size: 0.82rem;
   color: var(--primaria);
   text-decoration: none;
-  display: block;
-  padding: 0.15rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .instagram-perfis-lista li a:hover {
   text-decoration: underline;
+}
+
+.instagram-btn-remover {
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.instagram-btn-remover:hover {
+  color: #c0392b;
+  transform: none;
+  box-shadow: none;
 }
 
 .instagram-add-perfil {

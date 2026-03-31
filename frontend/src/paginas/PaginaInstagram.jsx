@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const CHAVE_ULTIMO_VISTO = 'agenda-cultural-recife:instagram-ultimo-visto';
+const CHAVE_PERFIS_ATIVOS = 'agenda-cultural-recife:instagram-perfis-ativos';
 
 // ── Login ──────────────────────────────────────────────────────────────────────
 
@@ -138,9 +139,10 @@ function CardPost({ post, novo, refPrimeiro }) {
 
 // ── Sidebar de perfis ──────────────────────────────────────────────────────────
 
-function SidebarPerfis({ perfis, onPerfilAdicionado }) {
+function SidebarPerfis({ perfis, perfisAtivos, onToggle, onPerfilAdicionado, onPerfilRemovido, ehGestor, token }) {
   const [novoHandle, setNovoHandle] = useState('');
   const [adicionando, setAdicionando] = useState(false);
+  const [removendo, setRemovendo] = useState(null);
   const [erro, setErro] = useState(null);
 
   async function handleAdicionar(e) {
@@ -166,6 +168,24 @@ function SidebarPerfis({ perfis, onPerfilAdicionado }) {
     }
   }
 
+  async function handleRemover(handle) {
+    if (!window.confirm(`Remover @${handle} do monitoramento?`)) return;
+    setRemovendo(handle);
+    try {
+      const r = await fetch(`${API}/instagram/perfis/${handle}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const dados = await r.json();
+      if (!r.ok) throw new Error(dados.erro || 'Erro ao remover perfil.');
+      onPerfilRemovido(dados.perfis);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setRemovendo(null);
+    }
+  }
+
   return (
     <aside className="instagram-sidebar">
       <div className="instagram-sidebar-secao">
@@ -173,16 +193,35 @@ function SidebarPerfis({ perfis, onPerfilAdicionado }) {
         {perfis.length === 0 ? (
           <p style={{ fontSize: '0.8rem', color: '#999', margin: 0 }}>Nenhum perfil ainda.</p>
         ) : (
-          <ul className="instagram-perfis-lista">
+          <ul className="instagram-perfis-lista instagram-perfis-scroll">
             {perfis.map(handle => (
-              <li key={handle}>
-                <a
-                  href={`https://www.instagram.com/${handle}/`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  @{handle}
-                </a>
+              <li key={handle} className="instagram-perfil-item">
+                <label className="instagram-perfil-label">
+                  <input
+                    type="checkbox"
+                    checked={perfisAtivos.has(handle)}
+                    onChange={() => onToggle(handle)}
+                    style={{ width: 'auto', margin: 0, padding: 0, border: 'none', background: 'none' }}
+                  />
+                  <a
+                    href={`https://www.instagram.com/${handle}/`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    @{handle}
+                  </a>
+                </label>
+                {ehGestor && (
+                  <button
+                    onClick={() => handleRemover(handle)}
+                    disabled={removendo === handle}
+                    className="instagram-btn-remover"
+                    title="Remover perfil"
+                  >
+                    {removendo === handle ? '…' : '×'}
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -209,8 +248,8 @@ function SidebarPerfis({ perfis, onPerfilAdicionado }) {
 
 const LIMITE = 20;
 
-export default function PaginaInstagram() {
-  const [sessao, setSessao] = useState(null);
+export default function PaginaInstagram({ sessao: sessaoProp }) {
+  const [sessaoInst, setSessaoInst] = useState(null); // sessão do Instagram
   const [posts, setPosts] = useState([]);
   const [pagina, setPagina] = useState(0);
   const [temMais, setTemMais] = useState(true);
@@ -218,6 +257,12 @@ export default function PaginaInstagram() {
   const [atualizando, setAtualizando] = useState(false);
   const [msgAtualizacao, setMsgAtualizacao] = useState(null);
   const [perfis, setPerfis] = useState([]);
+  const [perfisAtivos, setPerfisAtivos] = useState(() => {
+    try {
+      const salvo = localStorage.getItem(CHAVE_PERFIS_ATIVOS);
+      return salvo ? new Set(JSON.parse(salvo)) : null; // null = ainda não carregou
+    } catch { return null; }
+  });
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
 
@@ -226,37 +271,78 @@ export default function PaginaInstagram() {
   const ultimoVistoRef = useRef(null);
   const jaRolou = useRef(false);
 
+  // token do usuário logado no app (para DELETE)
+  const token = sessaoProp?.token || null;
+  const ehGestor = Boolean(
+    sessaoProp?.usuario?.funcao === 'administrador' ||
+    sessaoProp?.usuario?.funcao === 'moderador' ||
+    sessaoProp?.usuario?.verificado ||
+    Number(sessaoProp?.usuario?.reputacao || 0) >= 200
+  );
+
   // Ler último visto do localStorage ao montar
   useEffect(() => {
     try {
       const salvo = localStorage.getItem(CHAVE_ULTIMO_VISTO);
       if (salvo) ultimoVistoRef.current = JSON.parse(salvo);
-    } catch {
-      // ignora
-    }
+    } catch { /* ignora */ }
   }, []);
 
-  // Verificar sessão
+  // Verificar sessão do Instagram
   useEffect(() => {
     fetch(`${API}/instagram/sessao`)
       .then(r => r.json())
-      .then(setSessao)
-      .catch(() => setSessao({ conectado: false }));
+      .then(setSessaoInst)
+      .catch(() => setSessaoInst({ conectado: false }));
   }, []);
 
-  // Carregar perfis monitorados
+  // Carregar perfis monitorados e inicializar perfisAtivos
   useEffect(() => {
-    if (!sessao?.conectado) return;
+    if (!sessaoInst?.conectado) return;
     fetch(`${API}/instagram/perfis`)
       .then(r => r.json())
-      .then(data => setPerfis(Array.isArray(data) ? data : []))
+      .then(data => {
+        const lista = Array.isArray(data) ? data : [];
+        setPerfis(lista);
+        // Inicializar com perfis salvos (ou todos se primeira visita)
+        setPerfisAtivos(prev => {
+          if (prev === null) return new Set(lista);
+          // Manter apenas os que ainda existem
+          return new Set(lista.filter(h => prev.has(h)));
+        });
+      })
       .catch(() => {});
-  }, [sessao]);
+  }, [sessaoInst]);
 
-  const carregarPagina = useCallback(async (paginaNum) => {
+  // Persistir seleção no localStorage
+  useEffect(() => {
+    if (perfisAtivos === null) return;
+    localStorage.setItem(CHAVE_PERFIS_ATIVOS, JSON.stringify([...perfisAtivos]));
+  }, [perfisAtivos]);
+
+  function togglePerfil(handle) {
+    setPerfisAtivos(prev => {
+      const novo = new Set(prev);
+      if (novo.has(handle)) novo.delete(handle);
+      else novo.add(handle);
+      return novo;
+    });
+    // Recarregar feed do início com nova seleção
+    setPosts([]);
+    setPagina(0);
+    setTemMais(true);
+  }
+
+  const queryPerfis = useCallback((ativos) => {
+    if (!ativos || ativos.size === 0) return '';
+    return `&perfis=${[...ativos].join(',')}`;
+  }, []);
+
+  const carregarPagina = useCallback(async (paginaNum, ativos) => {
     setCarregando(true);
     try {
-      const r = await fetch(`${API}/instagram/posts?pagina=${paginaNum}&limite=${LIMITE}`);
+      const filtro = queryPerfis(ativos);
+      const r = await fetch(`${API}/instagram/posts?pagina=${paginaNum}&limite=${LIMITE}${filtro}`);
       if (!r.ok) {
         const e = await r.json();
         throw new Error(e.erro || 'Erro ao carregar posts.');
@@ -266,50 +352,45 @@ export default function PaginaInstagram() {
       setTemMais(dados.temMais);
       setPagina(paginaNum);
       if (dados.atualizadoEm) setAtualizadoEm(dados.atualizadoEm);
-
-      // Salvar shortcode + data do post mais recente como "último visto"
       if (paginaNum === 1 && dados.posts.length > 0) {
         const maisRecente = dados.posts[0];
-        localStorage.setItem(
-          CHAVE_ULTIMO_VISTO,
-          JSON.stringify({ shortcode: maisRecente.shortcode, data: maisRecente.data })
-        );
+        localStorage.setItem(CHAVE_ULTIMO_VISTO, JSON.stringify({ shortcode: maisRecente.shortcode, data: maisRecente.data }));
       }
     } catch (e) {
       setErro(e.message);
     } finally {
       setCarregando(false);
     }
-  }, []);
+  }, [queryPerfis]);
 
-  // Carga inicial quando sessão confirmada
+  // Carga inicial quando sessão e perfisAtivos prontos
   useEffect(() => {
-    if (!sessao?.conectado) return;
-    carregarPagina(1);
-  }, [sessao]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!sessaoInst?.conectado || perfisAtivos === null) return;
+    carregarPagina(1, perfisAtivos);
+  }, [sessaoInst, perfisAtivos]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Rolar ao primeiro post novo após renderizar
+  // Rolar ao primeiro post novo
   useEffect(() => {
     if (jaRolou.current || !primeirNovoRef.current) return;
     primeirNovoRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     jaRolou.current = true;
   });
 
-  // Scroll infinito via IntersectionObserver
+  // Scroll infinito
   useEffect(() => {
     const el = sentinelaRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting && !carregando && temMais && pagina > 0) {
-          carregarPagina(pagina + 1);
+          carregarPagina(pagina + 1, perfisAtivos);
         }
       },
       { rootMargin: '300px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [carregando, temMais, pagina, carregarPagina]);
+  }, [carregando, temMais, pagina, carregarPagina, perfisAtivos]);
 
   async function handleAtualizar() {
     setAtualizando(true);
@@ -326,7 +407,14 @@ export default function PaginaInstagram() {
     }
   }
 
-  // Determinar posts "novos" (não vistos desde última visita)
+  function aoRemoverPerfil(novaLista) {
+    setPerfis(novaLista);
+    setPerfisAtivos(prev => new Set([...prev].filter(h => novaLista.includes(h))));
+    setPosts([]);
+    setPagina(0);
+    setTemMais(true);
+  }
+
   const ultimoVisto = ultimoVistoRef.current;
   function eNovo(post) {
     if (!ultimoVisto) return false;
@@ -335,19 +423,19 @@ export default function PaginaInstagram() {
     return false;
   }
 
-  let indicePrimeiroNovo = ultimoVisto ? posts.findIndex(p => eNovo(p)) : -1;
+  const indicePrimeiroNovo = ultimoVisto ? posts.findIndex(p => eNovo(p)) : -1;
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
-  if (sessao === null) {
+  if (sessaoInst === null) {
     return <p style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>Verificando conexão...</p>;
   }
 
-  if (!sessao.conectado) {
+  if (!sessaoInst.conectado) {
     return (
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 1rem' }}>
         <h1 style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Posts do Instagram</h1>
-        <FormLogin onConectado={usuario => setSessao({ conectado: true, usuario })} />
+        <FormLogin onConectado={usuario => setSessaoInst({ conectado: true, usuario })} />
       </main>
     );
   }
@@ -361,23 +449,25 @@ export default function PaginaInstagram() {
       <div className="instagram-cabecalho-pagina">
         <h1>Posts do Instagram</h1>
         <span className="instagram-atualizado">Atualizado em: {atualizado}</span>
-        <button
-          className="btn-atualizar-instagram"
-          onClick={handleAtualizar}
-          disabled={atualizando}
-        >
+        <button className="btn-atualizar-instagram" onClick={handleAtualizar} disabled={atualizando}>
           {atualizando ? 'Atualizando...' : 'Atualizar'}
         </button>
       </div>
 
-      {msgAtualizacao && (
-        <p className="instagram-msg-atualizacao">{msgAtualizacao}</p>
-      )}
+      {msgAtualizacao && <p className="instagram-msg-atualizacao">{msgAtualizacao}</p>}
 
       <div className="instagram-layout">
         <SidebarPerfis
           perfis={perfis}
-          onPerfilAdicionado={novaLista => setPerfis(novaLista)}
+          perfisAtivos={perfisAtivos || new Set()}
+          onToggle={togglePerfil}
+          onPerfilAdicionado={novaLista => {
+            setPerfis(novaLista);
+            setPerfisAtivos(prev => new Set([...(prev || []), novaLista.at(-1)]));
+          }}
+          onPerfilRemovido={aoRemoverPerfil}
+          ehGestor={ehGestor}
+          token={token}
         />
 
         <main className="instagram-feed">
