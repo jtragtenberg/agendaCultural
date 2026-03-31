@@ -14,7 +14,7 @@ async function autenticarObrigatorio(req, res, next) {
     const payload = jwt.verify(token, segredoJwt);
     const usuario = await prisma.usuario.findUnique({
       where: { id: payload.id },
-      select: { id: true, email: true, nome: true }
+      select: { id: true, email: true, nome: true, funcao: true }
     });
 
     if (!usuario) {
@@ -43,4 +43,13 @@ function autenticarOpcional(req, _res, next) {
   return next();
 }
 
-module.exports = { autenticarObrigatorio, autenticarOpcional };
+async function autenticarAdmin(req, res, next) {
+  await autenticarObrigatorio(req, res, async () => {
+    if (req.usuario?.funcao !== 'administrador') {
+      return res.status(403).json({ erro: 'Acesso restrito a administradores.' });
+    }
+    return next();
+  });
+}
+
+module.exports = { autenticarObrigatorio, autenticarOpcional, autenticarAdmin };

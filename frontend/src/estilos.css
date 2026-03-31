@@ -1062,3 +1062,122 @@ button:disabled {
     position: static;
   }
 }
+
+/* ── Painel admin ────────────────────────────────────────────────────────── */
+
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-card {
+  background: linear-gradient(165deg, rgba(247, 244, 255, 0.94) 0%, rgba(239, 235, 255, 0.88) 100%);
+  border: 1px solid rgba(122, 113, 201, 0.4);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--texto-fraco);
+}
+
+.admin-card span {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primaria);
+  line-height: 1;
+}
+
+.admin-abas {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid rgba(122, 113, 201, 0.2);
+  padding-bottom: 0;
+}
+
+.admin-aba {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: var(--texto-fraco);
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: -2px;
+  border-bottom: 2px solid transparent;
+}
+
+.admin-aba:hover {
+  color: var(--primaria);
+  transform: none;
+  box-shadow: none;
+}
+
+.admin-aba-ativa {
+  color: var(--primaria);
+  font-weight: 600;
+  border-bottom: 2px solid var(--primaria);
+}
+
+.admin-conteudo {
+  min-height: 300px;
+}
+
+.admin-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.admin-tabela th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texto-fraco);
+  border-bottom: 2px solid rgba(122, 113, 201, 0.2);
+  white-space: nowrap;
+}
+
+.admin-tabela td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(122, 113, 201, 0.1);
+  vertical-align: middle;
+}
+
+.admin-tabela tr:hover td {
+  background: rgba(122, 113, 201, 0.04);
+}
+
+.badge-funcao {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.badge-funcao-usuario { background: #eee; color: #555; }
+.badge-funcao-moderador { background: rgba(122, 113, 201, 0.15); color: var(--primaria); }
+.badge-funcao-administrador { background: rgba(225, 48, 108, 0.12); color: #E1306C; }
+
+.badge-status {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.badge-status-pendente { background: #fff3cd; color: #856404; }
+.badge-status-aprovado { background: #d1fae5; color: #065f46; }
+.badge-status-rejeitado { background: #fee2e2; color: #991b1b; }
+.badge-status-sinalizado { background: #ffedd5; color: #92400e; }

@@ -10,6 +10,7 @@ import PaginaArtista from './paginas/PaginaArtista';
 import ModeracaoEventos from './paginas/ModeracaoEventos';
 import PaginaInstagram from './paginas/PaginaInstagram';
 import Configuracoes from './paginas/Configuracoes';
+import PaginaAdmin from './paginas/PaginaAdmin';
 
 const chaveSessao = 'agenda-cultural-recife:sessao';
 
@@ -47,6 +48,7 @@ export default function App() {
   const [modalExportar, setModalExportar] = useState(false);
 
   const token = useMemo(() => sessao?.token, [sessao]);
+  const ehAdmin = useMemo(() => sessao?.usuario?.funcao === 'administrador', [sessao]);
   const ehModerador = useMemo(
     () => Boolean(sessao?.usuario?.verificado || Number(sessao?.usuario?.reputacao || 0) >= 200),
     [sessao]
@@ -58,6 +60,7 @@ export default function App() {
         usuario={sessao?.usuario}
         onSair={sair}
         ehModerador={ehModerador}
+        ehAdmin={ehAdmin}
         onExportarAgenda={() => setModalExportar(true)}
       />
 
@@ -70,6 +73,7 @@ export default function App() {
         <Route path="/perfil" element={<Perfil sessao={sessao} onEntrar={entrar} />} />
         <Route path="/configuracoes" element={<Configuracoes sessao={sessao} token={token} onAtualizarUsuario={atualizarUsuario} />} />
         <Route path="/instagram" element={<PaginaInstagram />} />
+        <Route path="/admin" element={<PaginaAdmin token={token} ehAdmin={ehAdmin} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

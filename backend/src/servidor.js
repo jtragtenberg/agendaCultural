@@ -13,6 +13,7 @@ const rotasModeracao = require('./modulos/moderacao/rotas');
 const rotasUsuarios = require('./modulos/usuarios/rotas');
 const rotasCalendario = require('./modulos/calendario/rotas');
 const rotasInstagram = require('./modulos/instagram/rotas');
+const rotasAdmin = require('./modulos/admin/rotas');
 
 const app = express();
 app.use(cors());
@@ -30,6 +31,7 @@ app.use('/eventos', rotasModeracao);
 app.use('/usuarios', rotasCalendario);
 app.use('/usuarios', rotasUsuarios);
 app.use('/', rotasInstagram);
+app.use('/', rotasAdmin);
 
 app.use((erro, _req, res, _next) => {
   console.error(erro);
