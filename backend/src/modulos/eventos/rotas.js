@@ -3,6 +3,12 @@ const prisma = require('../../prisma');
 const { autenticarObrigatorio, autenticarOpcional } = require('../../middlewares');
 const { validarLimiteNovato, validarDuplicidade } = require('./servicoEventos');
 
+async function ehGestor(usuarioId) {
+  if (!usuarioId) return false;
+  const u = await prisma.usuario.findUnique({ where: { id: usuarioId }, select: { funcao: true } });
+  return u?.funcao === 'moderador' || u?.funcao === 'administrador';
+}
+
 const rotas = express.Router();
 
 rotas.get('/', autenticarOpcional, async (req, res) => {
@@ -26,18 +32,14 @@ rotas.get('/', autenticarOpcional, async (req, res) => {
   }
 });
 
-rotas.get('/:id', async (req, res) => {
+rotas.get('/:id', autenticarOpcional, async (req, res) => {
   try {
     const evento = await prisma.evento.findUnique({
       where: { id: req.params.id },
       include: {
         local: true,
-        criador: {
-          select: { id: true, nome: true, reputacao: true }
-        },
-        eventoArtistas: {
-          include: { artista: true }
-        }
+        criador: { select: { id: true, nome: true, reputacao: true } },
+        eventoArtistas: { include: { artista: true } }
       }
     });
 
@@ -45,7 +47,10 @@ rotas.get('/:id', async (req, res) => {
       return res.status(404).json({ erro: 'Evento não encontrado.' });
     }
 
-    return res.json(evento);
+    const gestor = await ehGestor(req.usuario?.id);
+    const podeEditar = req.usuario?.id === evento.criadoPor || gestor;
+
+    return res.json({ ...evento, podeEditar });
   } catch (erro) {
     return res.status(500).json({ erro: 'Falha ao buscar evento.' });
   }
@@ -86,6 +91,58 @@ rotas.post('/', autenticarObrigatorio, async (req, res) => {
   } catch (erro) {
     const status = erro.message?.includes('Limite') || erro.message?.includes('duplicado') ? 400 : 500;
     return res.status(status).json({ erro: erro.message || 'Falha ao criar evento.' });
+  }
+});
+
+rotas.put('/:id', autenticarObrigatorio, async (req, res) => {
+  try {
+    const evento = await prisma.evento.findUnique({ where: { id: req.params.id } });
+    if (!evento) return res.status(404).json({ erro: 'Evento não encontrado.' });
+
+    const gestor = await ehGestor(req.usuario.id);
+    if (req.usuario.id !== evento.criadoPor && !gestor) {
+      return res.status(403).json({ erro: 'Apenas o criador ou moderador pode editar.' });
+    }
+
+    const { titulo, descricao, localId, data, horaInicio, horaFim } = req.body;
+    const atualizado = await prisma.evento.update({
+      where: { id: req.params.id },
+      data: {
+        titulo,
+        descricao,
+        localId,
+        data: data ? new Date(data) : undefined,
+        horaInicio,
+        horaFim,
+      },
+      include: { local: true, eventoArtistas: { include: { artista: true } } }
+    });
+    return res.json(atualizado);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao editar evento.' });
+  }
+});
+
+rotas.delete('/:id', autenticarObrigatorio, async (req, res) => {
+  try {
+    const evento = await prisma.evento.findUnique({ where: { id: req.params.id } });
+    if (!evento) return res.status(404).json({ erro: 'Evento não encontrado.' });
+
+    const gestor = await ehGestor(req.usuario.id);
+    if (req.usuario.id !== evento.criadoPor && !gestor) {
+      return res.status(403).json({ erro: 'Apenas o criador ou moderador pode apagar.' });
+    }
+
+    const eventoId = req.params.id;
+    await prisma.$transaction([
+      prisma.agendaEvento.deleteMany({ where: { eventoId } }),
+      prisma.eventoArtista.deleteMany({ where: { eventoId } }),
+      prisma.denunciaEvento.deleteMany({ where: { eventoId } }),
+      prisma.evento.delete({ where: { id: eventoId } })
+    ]);
+    return res.status(204).send();
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao apagar evento.' });
   }
 });
 

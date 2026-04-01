@@ -35,26 +35,52 @@ rotas.get('/moderacao/eventos', autenticarObrigatorio, async (req, res) => {
       } : {})
     };
 
-    const [eventos, total] = await Promise.all([
-      prisma.evento.findMany({
-        where,
-        include: {
-          local: true,
-          criador: { select: { id: true, nome: true, email: true } },
-          eventoArtistas: { include: { artista: true } },
-          denuncias: {
-            select: { id: true, motivo: true, criadoEm: true, denunciante: { select: { id: true, nome: true } } },
-            orderBy: { criadoEm: 'desc' },
-            take: 5
-          },
-          _count: { select: { denuncias: true } }
-        },
-        orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }],
-        skip,
-        take: limite
-      }),
-      prisma.evento.count({ where })
-    ]);
+    const ordem = req.query.ordem || 'pendente_primeiro';
+
+    const incluir = {
+      local: true,
+      criador: { select: { id: true, nome: true, email: true } },
+      eventoArtistas: { include: { artista: true } },
+      denuncias: {
+        select: { id: true, motivo: true, criadoEm: true, denunciante: { select: { id: true, nome: true } } },
+        orderBy: { criadoEm: 'desc' },
+        take: 5
+      },
+      _count: { select: { denuncias: true } }
+    };
+
+    const orderByData = ordem === 'data_desc'
+      ? [{ data: 'desc' }, { horaInicio: 'desc' }]
+      : [{ data: 'asc' }, { horaInicio: 'asc' }];
+
+    let eventos;
+    const total = await prisma.evento.count({ where });
+
+    if (ordem === 'pendente_primeiro') {
+      const wherePendentes = { ...where, status: { in: ['pendente', 'sinalizado'] } };
+      const whereOutros = { ...where, status: { notIn: ['pendente', 'sinalizado'] } };
+      const contPendentes = await prisma.evento.count({ where: wherePendentes });
+
+      if (skip < contPendentes) {
+        const pendentes = await prisma.evento.findMany({
+          where: wherePendentes, include: incluir,
+          orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }], skip, take: limite
+        });
+        const faltam = limite - pendentes.length;
+        const outros = faltam > 0 ? await prisma.evento.findMany({
+          where: whereOutros, include: incluir,
+          orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }], skip: 0, take: faltam
+        }) : [];
+        eventos = [...pendentes, ...outros];
+      } else {
+        eventos = await prisma.evento.findMany({
+          where: whereOutros, include: incluir,
+          orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }], skip: skip - contPendentes, take: limite
+        });
+      }
+    } else {
+      eventos = await prisma.evento.findMany({ where, include: incluir, orderBy: orderByData, skip, take: limite });
+    }
 
     return res.json({ eventos, total, pagina, temMais: skip + eventos.length < total });
   } catch (erro) {

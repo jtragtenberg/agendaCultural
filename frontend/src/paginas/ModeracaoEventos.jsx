@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../servicos/api';
 
-const HOJE = new Date();
-HOJE.setHours(0, 0, 0, 0);
-
-function ehPassado(dataStr) {
-  return new Date(dataStr) < HOJE;
+function ehPassado(dataStr, status) {
+  if (status === 'pendente' || status === 'sinalizado') return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return new Date(dataStr) < hoje;
 }
 
 function badgeStatus(status) {
@@ -23,7 +23,9 @@ export default function ModeracaoEventos({ token, ehModerador }) {
   const [carregando, setCarregando] = useState(false);
   const [busca, setBusca] = useState('');
   const [incluirPassados, setIncluirPassados] = useState(false);
+  const [ordenacao, setOrdenacao] = useState('pendente_primeiro');
   const sentinelaRef = useRef(null);
+  const fetchIdRef = useRef(0);
 
   const [editandoEventoId, setEditandoEventoId] = useState(null);
   const [formEvento, setFormEvento] = useState({
@@ -45,25 +47,28 @@ export default function ModeracaoEventos({ token, ehModerador }) {
   const [mensagem, setMensagem] = useState('');
 
   // ── Carregar eventos (paginado) ───────────────────────────
-  const carregarEventos = useCallback(async (pg, q, passados, reset = false) => {
+  const carregarEventos = useCallback(async (pg, q, passados, ordem, reset = false) => {
     if (!token || !ehModerador) return;
+    const fetchId = ++fetchIdRef.current;
     setCarregando(true);
     try {
-      const { eventos: novos, temMais: mais } = await api.listarTodosEventosModerados(token, pg, q, passados);
+      const { eventos: novos, temMais: mais } = await api.listarTodosEventosModerados(token, pg, q, passados, ordem);
+      if (fetchId !== fetchIdRef.current) return;
       setEventos((ant) => (reset ? novos : [...ant, ...novos]));
       setTemMais(mais);
     } catch (e) {
+      if (fetchId !== fetchIdRef.current) return;
       setErro(e.message);
     } finally {
-      setCarregando(false);
+      if (fetchId === fetchIdRef.current) setCarregando(false);
     }
   }, [token, ehModerador]);
 
   // Reset ao mudar busca ou filtro
   useEffect(() => {
     setPagina(1);
-    carregarEventos(1, busca, incluirPassados, true);
-  }, [busca, incluirPassados, carregarEventos]);
+    carregarEventos(1, busca, incluirPassados, ordenacao, true);
+  }, [busca, incluirPassados, ordenacao, carregarEventos]);
 
   // Infinite scroll
   useEffect(() => {
@@ -72,14 +77,14 @@ export default function ModeracaoEventos({ token, ehModerador }) {
       if (entry.isIntersecting && temMais && !carregando) {
         setPagina((p) => {
           const prox = p + 1;
-          carregarEventos(prox, busca, incluirPassados, false);
+          carregarEventos(prox, busca, incluirPassados, ordenacao, false);
           return prox;
         });
       }
     }, { threshold: 0.1 });
     obs.observe(sentinelaRef.current);
     return () => obs.disconnect();
-  }, [temMais, carregando, busca, incluirPassados, carregarEventos]);
+  }, [temMais, carregando, busca, incluirPassados, ordenacao, carregarEventos]);
 
   // Locais e artistas só carregam quando aba é selecionada
   useEffect(() => {
@@ -220,6 +225,11 @@ export default function ModeracaoEventos({ token, ehModerador }) {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
+            <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
+              <option value="pendente_primeiro">Pendentes primeiro</option>
+              <option value="data_asc">Data crescente</option>
+              <option value="data_desc">Data decrescente</option>
+            </select>
             <label className="moderacao-toggle">
               <input type="checkbox" checked={incluirPassados} onChange={(e) => setIncluirPassados(e.target.checked)} />
               Mostrar eventos passados
@@ -228,7 +238,7 @@ export default function ModeracaoEventos({ token, ehModerador }) {
 
           <section className="lista-eventos">
             {eventos.map((evento) => {
-              const passado = ehPassado(evento.data);
+              const passado = ehPassado(evento.data, evento.status);
               const pendente = evento.status === 'pendente' || evento.status === 'sinalizado';
               return (
                 <article
