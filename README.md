@@ -227,6 +227,41 @@ Credenciais seed:
 
 > **Atenção:** o seed apaga todos os dados antes de recriar. Não rode em produção com dados reais.
 
+## Migração segura do banco de dados
+
+Quando o schema muda (novos campos, novas tabelas), use o script de migração para preservar os dados existentes:
+
+```bash
+# Docker local
+docker compose exec backend npm run db:migrar
+
+# VPS
+ssh root@SEU_IP
+cd /opt/agenda-cultural
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec backend npm run db:migrar
+```
+
+O script:
+1. Exporta todos os dados para `backend/backup/snapshot-<timestamp>.json`
+2. Reseta o banco e aplica o schema atual
+3. Reimporta tudo, preenchendo novos campos com valores padrão (`null`, `'usuario'`, etc.)
+
+Para só exportar um backup sem resetar:
+
+```bash
+# Docker local
+docker compose exec backend npm run db:exportar
+
+# VPS
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec backend npm run db:exportar
+```
+
+Para reimportar a partir de um backup específico:
+
+```bash
+docker compose exec backend node scripts/migrar-banco.js --so-importar backup/snapshot-2026-03-31T12-00-00.json
+```
+
 ## Executar local (sem Docker)
 
 ### 1) Backend
