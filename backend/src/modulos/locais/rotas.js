@@ -66,7 +66,7 @@ rotas.get('/:id', autenticarOpcional, async (req, res) => {
     }
 
     const podeEditar =
-      req.usuario?.id === local.criadoPor || (await ehModerador(req.usuario?.id));
+      req.usuario?.id === local.criadoPor || req.usuario?.id === local.donoPaginaId || (await ehModerador(req.usuario?.id));
 
     return res.json({ ...local, podeEditar });
   } catch (erro) {
@@ -100,6 +100,25 @@ rotas.post('/', autenticarObrigatorio, async (req, res) => {
   }
 });
 
+rotas.post('/:id/solicitar-propriedade', autenticarObrigatorio, async (req, res) => {
+  try {
+    const local = await prisma.local.findUnique({ where: { id: req.params.id } });
+    if (!local) return res.status(404).json({ erro: 'Local não encontrado.' });
+
+    const jaExiste = await prisma.solicitacaoPropriedade.findFirst({
+      where: { tipo: 'local', referenciaId: req.params.id, solicitanteId: req.usuario.id, status: 'pendente' }
+    });
+    if (jaExiste) return res.status(409).json({ erro: 'Você já tem uma solicitação pendente para este local.' });
+
+    const solicitacao = await prisma.solicitacaoPropriedade.create({
+      data: { tipo: 'local', referenciaId: req.params.id, solicitanteId: req.usuario.id }
+    });
+    return res.status(201).json(solicitacao);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao solicitar propriedade.' });
+  }
+});
+
 rotas.put('/:id', autenticarObrigatorio, async (req, res) => {
   try {
     const local = await prisma.local.findUnique({ where: { id: req.params.id } });
@@ -107,9 +126,9 @@ rotas.put('/:id', autenticarObrigatorio, async (req, res) => {
       return res.status(404).json({ erro: 'Local não encontrado.' });
     }
 
-    const autorizado = req.usuario.id === local.criadoPor || (await ehModerador(req.usuario.id));
+    const autorizado = req.usuario.id === local.criadoPor || req.usuario.id === local.donoPaginaId || (await ehModerador(req.usuario.id));
     if (!autorizado) {
-      return res.status(403).json({ erro: 'Apenas criador ou moderador pode editar.' });
+      return res.status(403).json({ erro: 'Apenas criador, dono ou moderador pode editar.' });
     }
 
     const atualizado = await prisma.local.update({

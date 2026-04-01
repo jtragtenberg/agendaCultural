@@ -238,6 +238,37 @@ export const api = {
   adminApagarLocal: (id, token) =>
     requisicao(`/admin/locais/${id}`, { method: 'DELETE', headers: cabecalhos(token) }),
 
+  atribuirDonoLocal: (id, donoPaginaId, token) =>
+    requisicao(`/eventos/moderacao/locais/${id}/dono`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify({ donoPaginaId })
+    }),
+  atribuirDonoArtista: (id, donoPaginaId, token) =>
+    requisicao(`/eventos/moderacao/artistas/${id}/dono`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify({ donoPaginaId })
+    }),
+  listarSolicitacoes: (token) =>
+    requisicao('/eventos/moderacao/solicitacoes', { headers: cabecalhos(token) }),
+  responderSolicitacao: (id, acao, token) =>
+    requisicao(`/eventos/moderacao/solicitacoes/${id}`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify({ acao })
+    }),
+  solicitarPropriedadeLocal: (id, token) =>
+    requisicao(`/locais/${id}/solicitar-propriedade`, {
+      method: 'POST',
+      headers: cabecalhos(token)
+    }),
+  solicitarPropriedadeArtista: (id, token) =>
+    requisicao(`/artistas/${id}/solicitar-propriedade`, {
+      method: 'POST',
+      headers: cabecalhos(token)
+    }),
+
   extrairEvento: (texto) =>
     requisicao('/ia/extrair-evento', {
       method: 'POST',

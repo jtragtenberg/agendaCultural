@@ -383,4 +383,97 @@ rotas.delete('/moderacao/artistas/:id', autenticarObrigatorio, async (req, res) 
   }
 });
 
+// ── Propriedade de página ──────────────────────────────────
+
+rotas.put('/moderacao/locais/:id/dono', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+    const { donoPaginaId } = req.body;
+    const atualizado = await prisma.local.update({
+      where: { id: req.params.id },
+      data: { donoPaginaId: donoPaginaId || null }
+    });
+    return res.json(atualizado);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao atribuir dono do local.' });
+  }
+});
+
+rotas.put('/moderacao/artistas/:id/dono', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+    const { donoPaginaId } = req.body;
+    const atualizado = await prisma.artista.update({
+      where: { id: req.params.id },
+      data: { donoPaginaId: donoPaginaId || null }
+    });
+    return res.json(atualizado);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao atribuir dono do artista.' });
+  }
+});
+
+rotas.get('/moderacao/solicitacoes', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+    const solicitacoes = await prisma.solicitacaoPropriedade.findMany({
+      where: { status: 'pendente' },
+      include: { solicitante: { select: { id: true, nome: true, email: true } } },
+      orderBy: { criadoEm: 'asc' }
+    });
+
+    // Enriquece com o nome do local/artista
+    const enriquecidas = await Promise.all(solicitacoes.map(async (s) => {
+      let nomeReferencia = null;
+      if (s.tipo === 'local') {
+        const local = await prisma.local.findUnique({ where: { id: s.referenciaId }, select: { nome: true } });
+        nomeReferencia = local?.nome;
+      } else {
+        const artista = await prisma.artista.findUnique({ where: { id: s.referenciaId }, select: { nome: true } });
+        nomeReferencia = artista?.nome;
+      }
+      return { ...s, nomeReferencia };
+    }));
+
+    return res.json(enriquecidas);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao listar solicitações.' });
+  }
+});
+
+rotas.put('/moderacao/solicitacoes/:id', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+    const { acao } = req.body;
+    if (!['aprovar', 'rejeitar'].includes(acao)) {
+      return res.status(400).json({ erro: 'acao deve ser "aprovar" ou "rejeitar".' });
+    }
+
+    const solicitacao = await prisma.solicitacaoPropriedade.findUnique({ where: { id: req.params.id } });
+    if (!solicitacao) return res.status(404).json({ erro: 'Solicitação não encontrada.' });
+
+    await prisma.solicitacaoPropriedade.update({ where: { id: req.params.id }, data: { status: acao === 'aprovar' ? 'aprovado' : 'rejeitado' } });
+
+    if (acao === 'aprovar') {
+      if (solicitacao.tipo === 'local') {
+        await prisma.local.update({ where: { id: solicitacao.referenciaId }, data: { donoPaginaId: solicitacao.solicitanteId } });
+      } else {
+        await prisma.artista.update({ where: { id: solicitacao.referenciaId }, data: { donoPaginaId: solicitacao.solicitanteId } });
+      }
+    }
+
+    return res.json({ ok: true });
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao responder solicitação.' });
+  }
+});
+
 module.exports = rotas;

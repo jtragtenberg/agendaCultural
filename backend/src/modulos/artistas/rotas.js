@@ -69,7 +69,7 @@ rotas.get('/:id', autenticarOpcional, async (req, res) => {
       .sort((a, b) => a.data - b.data);
 
     const podeEditar =
-      req.usuario?.id === artista.criadoPor || (await ehModerador(req.usuario?.id));
+      req.usuario?.id === artista.criadoPor || req.usuario?.id === artista.donoPaginaId || (await ehModerador(req.usuario?.id));
 
     return res.json({
       ...artista,
@@ -105,6 +105,25 @@ rotas.post('/', autenticarObrigatorio, async (req, res) => {
   }
 });
 
+rotas.post('/:id/solicitar-propriedade', autenticarObrigatorio, async (req, res) => {
+  try {
+    const artista = await prisma.artista.findUnique({ where: { id: req.params.id } });
+    if (!artista) return res.status(404).json({ erro: 'Artista não encontrado.' });
+
+    const jaExiste = await prisma.solicitacaoPropriedade.findFirst({
+      where: { tipo: 'artista', referenciaId: req.params.id, solicitanteId: req.usuario.id, status: 'pendente' }
+    });
+    if (jaExiste) return res.status(409).json({ erro: 'Você já tem uma solicitação pendente para este artista.' });
+
+    const solicitacao = await prisma.solicitacaoPropriedade.create({
+      data: { tipo: 'artista', referenciaId: req.params.id, solicitanteId: req.usuario.id }
+    });
+    return res.status(201).json(solicitacao);
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao solicitar propriedade.' });
+  }
+});
+
 rotas.put('/:id', autenticarObrigatorio, async (req, res) => {
   try {
     const artista = await prisma.artista.findUnique({ where: { id: req.params.id } });
@@ -112,9 +131,9 @@ rotas.put('/:id', autenticarObrigatorio, async (req, res) => {
       return res.status(404).json({ erro: 'Artista não encontrado.' });
     }
 
-    const autorizado = req.usuario.id === artista.criadoPor || (await ehModerador(req.usuario.id));
+    const autorizado = req.usuario.id === artista.criadoPor || req.usuario.id === artista.donoPaginaId || (await ehModerador(req.usuario.id));
     if (!autorizado) {
-      return res.status(403).json({ erro: 'Apenas criador ou moderador pode editar.' });
+      return res.status(403).json({ erro: 'Apenas criador, dono ou moderador pode editar.' });
     }
 
     const atualizado = await prisma.artista.update({
