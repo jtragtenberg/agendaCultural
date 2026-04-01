@@ -1,7 +1,6 @@
 const express = require('express');
 const prisma = require('../../prisma');
 const { autenticarObrigatorio, autenticarOpcional } = require('../../middlewares');
-const { reputacaoAutoAprovacao } = require('../../config');
 const { validarLimiteNovato, validarDuplicidade } = require('./servicoEventos');
 
 const rotas = express.Router();
@@ -63,8 +62,6 @@ rotas.post('/', autenticarObrigatorio, async (req, res) => {
     const usuario = await validarLimiteNovato(req.usuario.id);
     await validarDuplicidade({ localId, data, titulo });
 
-    const statusInicial = usuario.reputacao >= reputacaoAutoAprovacao || usuario.verificado ? 'aprovado' : 'pendente';
-
     const evento = await prisma.evento.create({
       data: {
         titulo,
@@ -74,7 +71,7 @@ rotas.post('/', autenticarObrigatorio, async (req, res) => {
         horaInicio,
         horaFim,
         criadoPor: req.usuario.id,
-        status: statusInicial,
+        status: 'pendente',
         eventoArtistas: {
           create: artistas.map((artistaId) => ({ artistaId }))
         }
@@ -84,13 +81,6 @@ rotas.post('/', autenticarObrigatorio, async (req, res) => {
         eventoArtistas: { include: { artista: true } }
       }
     });
-
-    if (statusInicial === 'aprovado') {
-      await prisma.usuario.update({
-        where: { id: req.usuario.id },
-        data: { reputacao: { increment: 5 } }
-      });
-    }
 
     return res.status(201).json(evento);
   } catch (erro) {
