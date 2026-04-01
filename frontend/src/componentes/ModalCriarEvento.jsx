@@ -15,31 +15,33 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
     data: dataPre || '',
     horaInicio: '19:00',
     horaFim: '21:00',
+    ingresso: '',
+    links: '',
+    linkIngresso: '',
+    imagemUrl: '',
   });
 
+  // Local
   const [buscaLocal, setBuscaLocal] = useState('');
   const [sugestoesLocais, setSugestoesLocais] = useState([]);
-  const [mostrarNovoLocal, setMostrarNovoLocal] = useState(false);
-  const [novoLocal, setNovoLocal] = useState({
-    nome: '', endereco: '', bairro: '', cidade: 'Recife', latitude: '', longitude: '',
-  });
+  const [novoLocalNome, setNovoLocalNome] = useState('');
+  const [criandoLocal, setCriandoLocal] = useState(false);
 
+  // Artistas
   const [buscaArtista, setBuscaArtista] = useState('');
   const [sugestoesArtistas, setSugestoesArtistas] = useState([]);
   const [artistasSelecionados, setArtistasSelecionados] = useState([]);
-  const [mostrarNovoArtista, setMostrarNovoArtista] = useState(false);
-  const [novoArtista, setNovoArtista] = useState({
-    nome: '', descricao: '', instagram: '', website: '',
-  });
+  const [novoArtistaNome, setNovoArtistaNome] = useState('');
+  const [criandoArtista, setCriandoArtista] = useState(false);
 
   useEffect(() => {
     const termo = buscaLocal.trim();
-    if (termo.length < 2) { setSugestoesLocais([]); return; }
+    if (termo.length < 2 || formulario.localId) { setSugestoesLocais([]); return; }
     const t = setTimeout(() => {
       api.listarLocais(termo).then(setSugestoesLocais).catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [buscaLocal]);
+  }, [buscaLocal, formulario.localId]);
 
   useEffect(() => {
     const termo = buscaArtista.trim();
@@ -58,9 +60,9 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
 
   function selecionarLocal(local) {
     setFormulario((ant) => ({ ...ant, localId: local.id }));
-    setBuscaLocal(`${local.nome} - ${local.bairro}`);
+    setBuscaLocal(`${local.nome}${local.bairro ? ` - ${local.bairro}` : ''}`);
     setSugestoesLocais([]);
-    setMostrarNovoLocal(false);
+    setNovoLocalNome('');
   }
 
   function adicionarArtista(artista) {
@@ -68,32 +70,34 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
     setArtistasSelecionados((ant) => [...ant, artista]);
     setBuscaArtista('');
     setSugestoesArtistas([]);
-    setMostrarNovoArtista(false);
+    setNovoArtistaNome('');
   }
 
-  async function criarNovoLocal() {
-    if (!token) { setErro('Faça login para criar um local.'); return; }
+  async function criarLocal() {
+    const nome = novoLocalNome.trim() || buscaLocal.trim();
+    if (!nome) { setErro('Digite o nome do local.'); return; }
+    setCriandoLocal(true);
     try {
-      const criado = await api.criarLocal({
-        ...novoLocal,
-        latitude: novoLocal.latitude === '' ? null : Number(novoLocal.latitude),
-        longitude: novoLocal.longitude === '' ? null : Number(novoLocal.longitude),
-      }, token);
+      const criado = await api.criarLocal({ nome }, token);
       selecionarLocal(criado);
-      setNovoLocal({ nome: '', endereco: '', bairro: '', cidade: 'Recife', latitude: '', longitude: '' });
     } catch (e) {
       setErro(e.message);
+    } finally {
+      setCriandoLocal(false);
     }
   }
 
-  async function criarNovoArtista() {
-    if (!token) { setErro('Faça login para criar um artista.'); return; }
+  async function criarArtista() {
+    const nome = novoArtistaNome.trim() || buscaArtista.trim();
+    if (!nome) { setErro('Digite o nome do artista.'); return; }
+    setCriandoArtista(true);
     try {
-      const criado = await api.criarArtista(novoArtista, token);
+      const criado = await api.criarArtista({ nome }, token);
       adicionarArtista(criado);
-      setNovoArtista({ nome: '', descricao: '', instagram: '', website: '' });
     } catch (e) {
       setErro(e.message);
+    } finally {
+      setCriandoArtista(false);
     }
   }
 
@@ -101,7 +105,7 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
     e.preventDefault();
     setErro('');
     if (!token) { setErro('Faça login para criar eventos.'); return; }
-    if (!formulario.localId) { setErro('Selecione um local.'); return; }
+    if (!formulario.localId) { setErro('Selecione ou crie um local.'); return; }
     try {
       await api.criarEvento({
         ...formulario,
@@ -128,27 +132,21 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
         data: extraido.data || ant.data,
         horaInicio: extraido.horaInicio || ant.horaInicio,
         horaFim: extraido.horaFim || ant.horaFim,
+        ingresso: extraido.ingresso || ant.ingresso,
       }));
 
       if (locaisEncontrados.length > 0) {
         selecionarLocal(locaisEncontrados[0]);
       } else if (extraido.nomeLocal) {
-        setNovoLocal({
-          nome: extraido.nomeLocal || '',
-          endereco: extraido.enderecoLocal || '',
-          bairro: extraido.bairroLocal || '',
-          cidade: extraido.cidadeLocal || 'Recife',
-          latitude: '',
-          longitude: '',
-        });
-        setMostrarNovoLocal(true);
+        setNovoLocalNome(extraido.nomeLocal);
+        setBuscaLocal(extraido.nomeLocal);
       }
 
       if (artistasEncontrados.length > 0) {
         adicionarArtista(artistasEncontrados[0]);
       } else if (extraido.nomeArtista) {
-        setNovoArtista((ant) => ({ ...ant, nome: extraido.nomeArtista }));
-        setMostrarNovoArtista(true);
+        setNovoArtistaNome(extraido.nomeArtista);
+        setBuscaArtista(extraido.nomeArtista);
       }
     } catch (e) {
       setErroIa(e.message);
@@ -213,13 +211,34 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
             </label>
           </div>
 
+          <label>
+            Ingresso
+            <input value={formulario.ingresso} onChange={(e) => alterar('ingresso', e.target.value)} placeholder="Ex: Gratuito, R$ 20, Couvert artístico..." />
+          </label>
+
+          <label>
+            Link para compra de ingresso
+            <input value={formulario.linkIngresso} onChange={(e) => alterar('linkIngresso', e.target.value)} placeholder="https://..." />
+          </label>
+
+          <label>
+            Link de divulgação
+            <input value={formulario.links} onChange={(e) => alterar('links', e.target.value)} placeholder="https://..." />
+          </label>
+
+          <label>
+            Imagem (URL)
+            <input value={formulario.imagemUrl} onChange={(e) => alterar('imagemUrl', e.target.value)} placeholder="https://..." />
+          </label>
+
+          {/* LOCAL */}
           <div className="campo-autocomplete">
             <label htmlFor="modal-busca-local">Local</label>
             <input
               id="modal-busca-local"
               value={buscaLocal}
               onChange={(e) => { setBuscaLocal(e.target.value); setFormulario((a) => ({ ...a, localId: '' })); }}
-              placeholder="Digite para buscar locais"
+              placeholder="Digite para buscar ou criar"
               autoComplete="off"
             />
             {formulario.localId ? (
@@ -229,39 +248,36 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
                   Trocar
                 </button>
               </p>
-            ) : null}
-            {sugestoesLocais.length > 0 ? (
-              <ul className="lista-sugestoes">
-                {sugestoesLocais.map((local) => (
-                  <li key={local.id}>
-                    <button type="button" onClick={() => selecionarLocal(local)}>
-                      {local.nome} - {local.bairro}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <button type="button" onClick={() => setMostrarNovoLocal((v) => !v)}>
-              {mostrarNovoLocal ? 'Cancelar novo local' : 'Novo local'}
-            </button>
-            {mostrarNovoLocal ? (
-              <div className="bloco-inline">
-                <input placeholder="Nome" value={novoLocal.nome} onChange={(e) => setNovoLocal((a) => ({ ...a, nome: e.target.value }))} />
-                <input placeholder="Endereço" value={novoLocal.endereco} onChange={(e) => setNovoLocal((a) => ({ ...a, endereco: e.target.value }))} />
-                <input placeholder="Bairro" value={novoLocal.bairro} onChange={(e) => setNovoLocal((a) => ({ ...a, bairro: e.target.value }))} />
-                <input placeholder="Cidade" value={novoLocal.cidade} onChange={(e) => setNovoLocal((a) => ({ ...a, cidade: e.target.value }))} />
-                <button type="button" onClick={criarNovoLocal}>Criar local</button>
-              </div>
-            ) : null}
+            ) : (
+              <>
+                {sugestoesLocais.length > 0 ? (
+                  <ul className="lista-sugestoes">
+                    {sugestoesLocais.map((local) => (
+                      <li key={local.id}>
+                        <button type="button" onClick={() => selecionarLocal(local)}>
+                          {local.nome}{local.bairro ? ` - ${local.bairro}` : ''}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {buscaLocal.trim().length >= 2 ? (
+                  <button type="button" onClick={criarLocal} disabled={criandoLocal}>
+                    {criandoLocal ? 'Criando...' : `Criar local "${buscaLocal.trim()}"`}
+                  </button>
+                ) : null}
+              </>
+            )}
           </div>
 
+          {/* ARTISTAS */}
           <div className="campo-autocomplete">
             <label htmlFor="modal-busca-artista">Artistas</label>
             <input
               id="modal-busca-artista"
               value={buscaArtista}
               onChange={(e) => setBuscaArtista(e.target.value)}
-              placeholder="Digite para buscar artistas"
+              placeholder="Digite para buscar ou criar"
               autoComplete="off"
             />
             {sugestoesArtistas.length > 0 ? (
@@ -273,6 +289,11 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
                 ))}
               </ul>
             ) : null}
+            {buscaArtista.trim().length >= 2 ? (
+              <button type="button" onClick={criarArtista} disabled={criandoArtista}>
+                {criandoArtista ? 'Criando...' : `Criar artista "${buscaArtista.trim()}"`}
+              </button>
+            ) : null}
             {artistasSelecionados.length > 0 ? (
               <div className="tags-selecionadas">
                 {artistasSelecionados.map((artista) => (
@@ -281,18 +302,6 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
                     <button type="button" onClick={() => setArtistasSelecionados((ant) => ant.filter((a) => a.id !== artista.id))}>x</button>
                   </span>
                 ))}
-              </div>
-            ) : null}
-            <button type="button" onClick={() => setMostrarNovoArtista((v) => !v)}>
-              {mostrarNovoArtista ? 'Cancelar novo artista' : 'Novo artista'}
-            </button>
-            {mostrarNovoArtista ? (
-              <div className="bloco-inline">
-                <input placeholder="Nome" value={novoArtista.nome} onChange={(e) => setNovoArtista((a) => ({ ...a, nome: e.target.value }))} />
-                <textarea placeholder="Descrição" value={novoArtista.descricao} onChange={(e) => setNovoArtista((a) => ({ ...a, descricao: e.target.value }))} />
-                <input placeholder="Instagram" value={novoArtista.instagram} onChange={(e) => setNovoArtista((a) => ({ ...a, instagram: e.target.value }))} />
-                <input placeholder="Website" value={novoArtista.website} onChange={(e) => setNovoArtista((a) => ({ ...a, website: e.target.value }))} />
-                <button type="button" onClick={criarNovoArtista}>Criar artista</button>
               </div>
             ) : null}
           </div>

@@ -46,7 +46,18 @@ export const api = {
       headers: cabecalhos(token)
     }),
 
-  buscarEvento: (id) => requisicao(`/eventos/${id}`),
+  buscarEvento: (id, token) => requisicao(`/eventos/${id}`, { headers: cabecalhos(token) }),
+  editarEvento: (id, dados, token) =>
+    requisicao(`/eventos/${id}`, {
+      method: 'PUT',
+      headers: cabecalhos(token),
+      body: JSON.stringify(dados)
+    }),
+  deletarEvento: (id, token) =>
+    requisicao(`/eventos/${id}`, {
+      method: 'DELETE',
+      headers: cabecalhos(token)
+    }),
 
   listarArtistas: (busca = '') => requisicao(`/artistas${queryBusca(busca)}`),
   buscarArtista: (id, token) => requisicao(`/artistas/${id}`, { headers: cabecalhos(token) }),

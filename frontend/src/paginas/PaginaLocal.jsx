@@ -59,6 +59,7 @@ export default function PaginaLocal({ token }) {
   }, [id, token]);
 
   const podeEditar = useMemo(() => Boolean(local?.podeEditar), [local]);
+  const [editando, setEditando] = useState(false);
 
   async function salvar(e) {
     e.preventDefault();
@@ -115,8 +116,10 @@ export default function PaginaLocal({ token }) {
 
       {podeEditar ? (
         <section className="bloco-edicao-publica">
-          <h3>Editar local</h3>
-          <form onSubmit={salvar} className="formulario">
+          <button type="button" onClick={() => setEditando((v) => !v)}>
+            {editando ? 'Cancelar edição' : 'Editar local'}
+          </button>
+          {editando && <form onSubmit={salvar} className="formulario">
             <label>
               Nome
               <input value={formulario.nome} onChange={(e) => setFormulario((a) => ({ ...a, nome: e.target.value }))} />
@@ -155,7 +158,7 @@ export default function PaginaLocal({ token }) {
               />
             </label>
             <button type="submit">Salvar alterações</button>
-          </form>
+          </form>}
         </section>
       ) : token ? (
         <BotaoSolicitarPropriedade id={id} tipo="local" token={token} />
