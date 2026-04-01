@@ -1163,7 +1163,8 @@ button:disabled {
   box-shadow: none;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
-  color: var(--texto-fraco);
+  color: #2d2660;
+  font-weight: 500;
   cursor: pointer;
   border-radius: 8px 8px 0 0;
   margin-bottom: -2px;
