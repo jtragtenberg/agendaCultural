@@ -6,8 +6,8 @@ const { aplicarPenalidadePorDenuncias } = require('../eventos/servicoEventos');
 const rotas = express.Router();
 
 async function validarModerador(usuarioId) {
-  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
-  return Boolean(usuario?.verificado || usuario?.reputacao >= 200);
+  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId }, select: { funcao: true } });
+  return usuario?.funcao === 'moderador' || usuario?.funcao === 'administrador';
 }
 
 rotas.get('/moderacao/nao-moderados', autenticarObrigatorio, async (req, res) => {

@@ -50,7 +50,7 @@ export default function App() {
   const token = useMemo(() => sessao?.token, [sessao]);
   const ehAdmin = useMemo(() => sessao?.usuario?.funcao === 'administrador', [sessao]);
   const ehModerador = useMemo(
-    () => Boolean(sessao?.usuario?.verificado || Number(sessao?.usuario?.reputacao || 0) >= 200),
+    () => sessao?.usuario?.funcao === 'moderador' || sessao?.usuario?.funcao === 'administrador',
     [sessao]
   );
 

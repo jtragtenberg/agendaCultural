@@ -6,11 +6,8 @@ const rotas = express.Router();
 
 async function ehModerador(usuarioId) {
   if (!usuarioId) return false;
-  const usuario = await prisma.usuario.findUnique({
-    where: { id: usuarioId },
-    select: { reputacao: true, verificado: true }
-  });
-  return Boolean(usuario && (usuario.verificado || usuario.reputacao >= 200));
+  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId }, select: { funcao: true } });
+  return usuario?.funcao === 'moderador' || usuario?.funcao === 'administrador';
 }
 
 rotas.get('/', async (req, res) => {
