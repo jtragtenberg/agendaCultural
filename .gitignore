@@ -25,3 +25,6 @@ dados/instagram_log.txt
 .claude/
 
 dump.sql
+
+#backup
+backend/backup
