@@ -40,7 +40,7 @@ export default function Home({ token }) {
 
   useEffect(() => {
     api.listarEventos(token)
-      .then((dados) => setEventos(dados.filter((e) => e.status === 'aprovado')))
+      .then((dados) => setEventos(dados.filter((e) => e.status !== 'rejeitado')))
       .catch((e) => setErro(e.message));
   }, [token]);
 
@@ -117,9 +117,9 @@ export default function Home({ token }) {
 
   async function onEventoCriado() {
     setModalData(null);
-    setMensagem('Evento criado. Ficará visível após aprovação.');
+    setMensagem('Evento criado. Aparecerá no calendário enquanto aguarda moderação.');
     const dados = await api.listarEventos(token);
-    setEventos(dados.filter((e) => e.status === 'aprovado'));
+    setEventos(dados.filter((e) => e.status !== 'rejeitado'));
   }
 
   const ano = referencia.getFullYear();
