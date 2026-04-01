@@ -58,7 +58,7 @@ rotas.get('/:id', autenticarOpcional, async (req, res) => {
 
 rotas.post('/', autenticarObrigatorio, async (req, res) => {
   try {
-    const { titulo, descricao, localId, data, horaInicio, horaFim, artistas = [], ingresso, links, imagemUrl } = req.body;
+    const { titulo, descricao, localId, data, horaInicio, horaFim, artistas = [], ingresso, links, linkIngresso, imagemUrl } = req.body;
 
     if (!titulo || !descricao || !localId || !data || !horaInicio) {
       return res.status(400).json({ erro: 'Campos obrigatórios: titulo, descricao, localId, data, horaInicio.' });
@@ -77,6 +77,7 @@ rotas.post('/', autenticarObrigatorio, async (req, res) => {
         horaFim,
         ingresso,
         links,
+        linkIngresso,
         imagemUrl,
         criadoPor: req.usuario.id,
         status: 'pendente',
@@ -107,7 +108,7 @@ rotas.put('/:id', autenticarObrigatorio, async (req, res) => {
       return res.status(403).json({ erro: 'Apenas o criador ou moderador pode editar.' });
     }
 
-    const { titulo, descricao, localId, data, horaInicio, horaFim, artistas, ingresso, links, imagemUrl } = req.body;
+    const { titulo, descricao, localId, data, horaInicio, horaFim, artistas, ingresso, links, linkIngresso, imagemUrl } = req.body;
     const atualizado = await prisma.evento.update({
       where: { id: req.params.id },
       data: {
@@ -119,6 +120,7 @@ rotas.put('/:id', autenticarObrigatorio, async (req, res) => {
         horaFim,
         ingresso,
         links,
+        linkIngresso,
         imagemUrl,
         ...(artistas !== undefined && {
           eventoArtistas: {

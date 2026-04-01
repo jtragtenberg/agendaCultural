@@ -17,6 +17,7 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
     horaFim: '21:00',
     ingresso: '',
     links: '',
+    linkIngresso: '',
     imagemUrl: '',
   });
 
@@ -216,8 +217,13 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
           </label>
 
           <label>
-            Links
-            <input value={formulario.links} onChange={(e) => alterar('links', e.target.value)} placeholder="Link para ingressos ou mais informações" />
+            Link para compra de ingresso
+            <input value={formulario.linkIngresso} onChange={(e) => alterar('linkIngresso', e.target.value)} placeholder="https://..." />
+          </label>
+
+          <label>
+            Link de divulgação
+            <input value={formulario.links} onChange={(e) => alterar('links', e.target.value)} placeholder="https://..." />
           </label>
 
           <label>

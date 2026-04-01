@@ -13,6 +13,7 @@ function FormularioEdicao({ evento, token, onSalvo, onCancelar }) {
     horaFim: evento.horaFim || '',
     ingresso: evento.ingresso || '',
     links: evento.links || '',
+    linkIngresso: evento.linkIngresso || '',
     imagemUrl: evento.imagemUrl || '',
   });
   const [erro, setErro] = useState('');
@@ -131,8 +132,13 @@ function FormularioEdicao({ evento, token, onSalvo, onCancelar }) {
       </label>
 
       <label>
-        Links
-        <input value={formulario.links} onChange={(e) => setFormulario((a) => ({ ...a, links: e.target.value }))} placeholder="Link para ingressos ou mais informações" />
+        Link de divulgação
+        <input value={formulario.links} onChange={(e) => setFormulario((a) => ({ ...a, links: e.target.value }))} placeholder="https://..." />
+      </label>
+
+      <label>
+        Link para compra de ingresso
+        <input value={formulario.linkIngresso} onChange={(e) => setFormulario((a) => ({ ...a, linkIngresso: e.target.value }))} placeholder="https://..." />
       </label>
 
       <label>
@@ -308,12 +314,14 @@ export default function PaginaEvento({ token }) {
           {evento.ingresso ? <p><strong>Ingresso:</strong> {evento.ingresso}</p> : null}
           {evento.links ? (
             <p>
-              <strong>Links:</strong>{' '}
-              {evento.links.startsWith('http') ? (
-                <a href={evento.links} target="_blank" rel="noopener noreferrer">{evento.links}</a>
-              ) : (
-                evento.links
-              )}
+              <strong>Divulgação:</strong>{' '}
+              <a href={evento.links} target="_blank" rel="noopener noreferrer">{evento.links}</a>
+            </p>
+          ) : null}
+          {evento.linkIngresso ? (
+            <p>
+              <strong>Ingresso:</strong>{' '}
+              <a href={evento.linkIngresso} target="_blank" rel="noopener noreferrer">Comprar ingresso</a>
             </p>
           ) : null}
 
