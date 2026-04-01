@@ -243,7 +243,7 @@ export default function ModeracaoEventos({ token, ehModerador }) {
               return (
                 <article
                   key={evento.id}
-                  className={`card-evento${pendente ? ' moderacao-card moderacao-pendente' : ''}${passado ? ' moderacao-passado' : ''}`}
+                  className={`card-evento${pendente ? ' moderacao-card moderacao-pendente' : ' moderacao-sem-destaque'}${passado ? ' moderacao-passado' : ''}`}
                 >
                   <div className="moderacao-card-topo">
                     <h3>{evento.titulo}</h3>
