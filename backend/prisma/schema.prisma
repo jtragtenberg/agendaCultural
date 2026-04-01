@@ -35,42 +35,51 @@ model Usuario {
   eventosCriados  Evento[]         @relation("EventoCriadoPor")
   eventosModerados Evento[]        @relation("EventoModeradoPor")
   locaisCriados   Local[]          @relation("LocalCriadoPor")
+  locaisDono      Local[]          @relation("LocalDono")
   artistasCriados Artista[]        @relation("ArtistaCriadoPor")
+  artistasDono    Artista[]        @relation("ArtistaDono")
   agendaEventos   AgendaEvento[]
   seguindo        Seguidor[]       @relation("SeguidorSeguindo")
   seguidores      Seguidor[]       @relation("SeguidorSeguidor")
   denuncias       DenunciaEvento[] @relation("DenunciasPorUsuario")
+  solicitacoes    SolicitacaoPropriedade[]
 
   @@map("usuarios")
 }
 
 model Local {
-  id         String   @id @default(uuid()) @db.Uuid
-  nome       String
-  endereco   String
-  bairro     String
-  cidade     String
-  latitude   Decimal? @db.Decimal(10, 7)
-  longitude  Decimal? @db.Decimal(10, 7)
-  criadoPor  String   @map("criado_por") @db.Uuid
-  criadoEm   DateTime @default(now()) @map("criado_em")
+  id           String   @id @default(uuid()) @db.Uuid
+  nome         String
+  endereco     String
+  bairro       String
+  cidade       String
+  latitude     Decimal? @db.Decimal(10, 7)
+  longitude    Decimal? @db.Decimal(10, 7)
+  fotoUrl      String?  @map("foto_url")
+  criadoPor    String   @map("criado_por") @db.Uuid
+  donoPaginaId String?  @map("dono_pagina_id") @db.Uuid
+  criadoEm     DateTime @default(now()) @map("criado_em")
 
   criador    Usuario  @relation("LocalCriadoPor", fields: [criadoPor], references: [id])
+  donoPagina Usuario? @relation("LocalDono", fields: [donoPaginaId], references: [id])
   eventos    Evento[]
 
   @@map("locais")
 }
 
 model Artista {
-  id         String          @id @default(uuid()) @db.Uuid
-  nome       String
-  descricao  String?
-  instagram  String?
-  website    String?
-  criadoPor  String          @map("criado_por") @db.Uuid
-  criadoEm   DateTime        @default(now()) @map("criado_em")
+  id           String          @id @default(uuid()) @db.Uuid
+  nome         String
+  descricao    String?
+  instagram    String?
+  website      String?
+  fotoUrl      String?         @map("foto_url")
+  criadoPor    String          @map("criado_por") @db.Uuid
+  donoPaginaId String?         @map("dono_pagina_id") @db.Uuid
+  criadoEm     DateTime        @default(now()) @map("criado_em")
 
-  criador       Usuario         @relation("ArtistaCriadoPor", fields: [criadoPor], references: [id])
+  criador        Usuario         @relation("ArtistaCriadoPor", fields: [criadoPor], references: [id])
+  donoPagina     Usuario?        @relation("ArtistaDono", fields: [donoPaginaId], references: [id])
   eventoArtistas EventoArtista[]
 
   @@map("artistas")
@@ -136,6 +145,19 @@ model Seguidor {
 
   @@id([seguidorId, seguindoId])
   @@map("seguidores")
+}
+
+model SolicitacaoPropriedade {
+  id            String   @id @default(uuid()) @db.Uuid
+  tipo          String
+  referenciaId  String   @map("referencia_id") @db.Uuid
+  solicitanteId String   @map("solicitante_id") @db.Uuid
+  status        String   @default("pendente")
+  criadoEm      DateTime @default(now()) @map("criado_em")
+
+  solicitante   Usuario  @relation(fields: [solicitanteId], references: [id])
+
+  @@map("solicitacoes_propriedade")
 }
 
 model DenunciaEvento {
