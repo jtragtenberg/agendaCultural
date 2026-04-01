@@ -51,7 +51,6 @@ rotas.get('/:id', autenticarOpcional, async (req, res) => {
         eventoArtistas: {
           include: {
             evento: {
-              where: { status: 'aprovado' },
               include: { local: true }
             }
           }
@@ -65,18 +64,17 @@ rotas.get('/:id', autenticarOpcional, async (req, res) => {
 
     const eventos = artista.eventoArtistas
       .map((registro) => registro.evento)
-      .filter(Boolean)
-      .sort((a, b) => a.data - b.data);
+      .filter((e) => e && e.status !== 'rejeitado')
+      .sort((a, b) => new Date(a.data) - new Date(b.data));
 
     const podeEditar =
-      req.usuario?.id === artista.criadoPor || req.usuario?.id === artista.donoPaginaId || (await ehModerador(req.usuario?.id));
+      req.usuario?.id === artista.criadoPor ||
+      req.usuario?.id === artista.donoPaginaId ||
+      (await ehModerador(req.usuario?.id));
 
-    return res.json({
-      ...artista,
-      eventos,
-      podeEditar
-    });
+    return res.json({ ...artista, eventos, podeEditar });
   } catch (erro) {
+    console.error('Erro ao buscar artista:', erro);
     return res.status(500).json({ erro: 'Falha ao buscar artista.' });
   }
 });

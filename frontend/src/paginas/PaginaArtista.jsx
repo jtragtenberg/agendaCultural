@@ -55,6 +55,7 @@ export default function PaginaArtista({ token }) {
   }, [id, token]);
 
   const podeEditar = useMemo(() => Boolean(artista?.podeEditar), [artista]);
+  const [editando, setEditando] = useState(false);
 
   async function salvar(e) {
     e.preventDefault();
@@ -105,8 +106,10 @@ export default function PaginaArtista({ token }) {
 
       {podeEditar ? (
         <section className="bloco-edicao-publica">
-          <h3>Editar artista</h3>
-          <form onSubmit={salvar} className="formulario">
+          <button type="button" onClick={() => setEditando((v) => !v)}>
+            {editando ? 'Cancelar edição' : 'Editar artista'}
+          </button>
+          {editando && <form onSubmit={salvar} className="formulario">
             <label>
               Nome
               <input value={formulario.nome} onChange={(e) => setFormulario((a) => ({ ...a, nome: e.target.value }))} />
@@ -130,7 +133,7 @@ export default function PaginaArtista({ token }) {
               <input value={formulario.website} onChange={(e) => setFormulario((a) => ({ ...a, website: e.target.value }))} />
             </label>
             <button type="submit">Salvar alterações</button>
-          </form>
+          </form>}
         </section>
       ) : token ? (
         <BotaoSolicitarPropriedade id={id} token={token} />

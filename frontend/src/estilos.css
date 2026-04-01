@@ -333,6 +333,57 @@ button:disabled {
   font-weight: 600;
 }
 
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 16px rgba(55, 45, 120, 0.22);
+  max-width: 360px;
+  animation: toast-in 0.2s ease;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.toast-sucesso {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+}
+
+.toast-erro {
+  background: #fce4ec;
+  color: #880e4f;
+  border: 1px solid #f48fb1;
+}
+
+.toast-fechar {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+  min-width: unset;
+}
+
+.toast-fechar:hover {
+  opacity: 1;
+  background: none;
+}
+
 .bloco-denuncia,
 .bloco-edicao-publica,
 .bloco-inline,
@@ -344,6 +395,13 @@ button:disabled {
 .bloco-denuncia,
 .bloco-edicao-publica {
   margin-top: 1rem;
+}
+
+.botao-perigo {
+  background: #c0392b;
+}
+.botao-perigo:hover {
+  background: #a93226;
 }
 
 .acoes-perfil {
@@ -446,6 +504,13 @@ button:disabled {
 .evento-mini-titulo {
   font-weight: 700;
   line-height: 1.3;
+}
+
+.evento-mini-ingresso {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--texto-fraco);
+  opacity: 0.85;
 }
 
 .lista-sugestoes {

@@ -76,10 +76,10 @@ rotas.get('/:id', autenticarOpcional, async (req, res) => {
 
 rotas.post('/', autenticarObrigatorio, async (req, res) => {
   try {
-    const { nome, endereco, bairro, cidade, latitude, longitude } = req.body;
+    const { nome, endereco = '', bairro = '', cidade = 'Recife', latitude, longitude } = req.body;
 
-    if (!nome || !endereco || !bairro || !cidade) {
-      return res.status(400).json({ erro: 'Campos obrigatórios: nome, endereco, bairro, cidade.' });
+    if (!nome) {
+      return res.status(400).json({ erro: 'Campo obrigatório: nome.' });
     }
 
     const local = await prisma.local.create({

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../servicos/api';
 import ModalCriarEvento from '../componentes/ModalCriarEvento';
+import Toast from '../componentes/Toast';
 
 const CORES = {
   recife: '#E1306C',
@@ -19,9 +20,19 @@ function chaveData(ano, mes, dia) {
   return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
+// Retifica a data para o fuso de Recife (UTC-3)
 function dataParaChave(dataEntrada) {
   const d = new Date(dataEntrada);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  // UTC-3: subtrai 3h antes de extrair ano/mês/dia
+  const recife = new Date(d.getTime() - 3 * 60 * 60 * 1000);
+  return `${recife.getUTCFullYear()}-${String(recife.getUTCMonth() + 1).padStart(2, '0')}-${String(recife.getUTCDate()).padStart(2, '0')}`;
+}
+
+// "hoje" no fuso de Recife
+function hojeRecife() {
+  const agora = new Date();
+  const recife = new Date(agora.getTime() - 3 * 60 * 60 * 1000);
+  return `${recife.getUTCFullYear()}-${String(recife.getUTCMonth() + 1).padStart(2, '0')}-${String(recife.getUTCDate()).padStart(2, '0')}`;
 }
 
 export default function Home({ token }) {
@@ -34,9 +45,12 @@ export default function Home({ token }) {
     return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
   });
   const [modalData, setModalData] = useState(null);
-  const [mensagem, setMensagem] = useState('');
-  const [erro, setErro] = useState('');
-  const hojeChave = dataParaChave(new Date());
+  const [toast, setToast] = useState({ mensagem: '', tipo: 'sucesso' });
+  const hojeChave = hojeRecife();
+
+  const mostrarToast = useCallback((mensagem, tipo = 'sucesso') => {
+    setToast({ mensagem, tipo });
+  }, []);
 
   useEffect(() => {
     api.listarEventos(token)
@@ -77,6 +91,7 @@ export default function Home({ token }) {
           titulo: ev.titulo,
           horaInicio: ev.horaInicio,
           local: ev.local?.nome || '',
+          ingresso: ev.ingresso || '',
           origem: 'minha',
         });
         adicionados.add(ev.id);
@@ -95,6 +110,7 @@ export default function Home({ token }) {
           titulo: ev.titulo,
           horaInicio: ev.horaInicio,
           local: ev.local?.nome || '',
+          ingresso: ev.ingresso || '',
           origem: 'recife',
         });
       });
@@ -104,20 +120,20 @@ export default function Home({ token }) {
   }, [eventos, agenda, busca, calendarios]);
 
   async function adicionarNaAgenda(eventoId) {
-    if (!token) { setErro('Faça login para adicionar à agenda.'); return; }
+    if (!token) { mostrarToast('Faça login para adicionar à agenda.', 'erro'); return; }
     try {
       await api.adicionarAgenda(eventoId, token);
       const dados = await api.minhaAgenda(token);
       setAgenda(dados);
-      setMensagem('Evento adicionado à sua agenda.');
+      mostrarToast('Evento adicionado à sua agenda.');
     } catch (e) {
-      setErro(e.message);
+      mostrarToast(e.message, 'erro');
     }
   }
 
   async function onEventoCriado() {
     setModalData(null);
-    setMensagem('Evento criado. Aparecerá no calendário enquanto aguarda moderação.');
+    mostrarToast('Evento criado. Aparecerá no calendário enquanto aguarda moderação.');
     const dados = await api.listarEventos(token);
     setEventos(dados.filter((e) => e.status !== 'rejeitado'));
   }
@@ -223,6 +239,7 @@ export default function Home({ token }) {
                         <Link to={`/evento/${evento.eventoId}`}>{evento.titulo}</Link>
                       </p>
                       <p>{evento.horaInicio}{evento.local ? ` · ${evento.local}` : ''}</p>
+                      {evento.ingresso ? <p className="evento-mini-ingresso">{evento.ingresso}</p> : null}
                       {token && evento.origem === 'recife' && !idsMinhaAgenda.has(evento.eventoId) ? (
                         <button type="button" className="btn-salvar-agenda" onClick={() => adicionarNaAgenda(evento.eventoId)}>
                           + minha agenda
@@ -236,8 +253,6 @@ export default function Home({ token }) {
           })}
         </div>
 
-        {mensagem ? <p className="sucesso" style={{ marginTop: '1rem' }}>{mensagem}</p> : null}
-        {erro ? <p className="erro" style={{ marginTop: '1rem' }}>{erro}</p> : null}
       </section>
 
       {modalData ? (
@@ -248,6 +263,12 @@ export default function Home({ token }) {
           onEventoCriado={onEventoCriado}
         />
       ) : null}
+
+      <Toast
+        mensagem={toast.mensagem}
+        tipo={toast.tipo}
+        onFechar={() => setToast({ mensagem: '', tipo: 'sucesso' })}
+      />
     </div>
   );
 }
