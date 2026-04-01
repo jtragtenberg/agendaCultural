@@ -115,6 +115,10 @@ export const api = {
     requisicao('/eventos/moderacao/nao-moderados', {
       headers: cabecalhos(token)
     }),
+  listarTodosEventosModerados: (token, pagina = 1, q = '', incluirPassados = false) =>
+    requisicao(`/eventos/moderacao/eventos?pagina=${pagina}&q=${encodeURIComponent(q)}&incluirPassados=${incluirPassados}`, {
+      headers: cabecalhos(token)
+    }),
   aprovarEvento: (id, token) =>
     requisicao(`/eventos/${id}/aprovar`, {
       method: 'POST',

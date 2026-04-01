@@ -10,6 +10,58 @@ async function validarModerador(usuarioId) {
   return usuario?.funcao === 'moderador' || usuario?.funcao === 'administrador';
 }
 
+rotas.get('/moderacao/eventos', autenticarObrigatorio, async (req, res) => {
+  try {
+    if (!(await validarModerador(req.usuario.id))) {
+      return res.status(403).json({ erro: 'Ação permitida apenas para moderadores.' });
+    }
+
+    const pagina = Math.max(1, parseInt(req.query.pagina) || 1);
+    const limite = 10;
+    const skip = (pagina - 1) * limite;
+    const q = String(req.query.q || '').trim();
+    const incluirPassados = req.query.incluirPassados === 'true';
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const where = {
+      ...(incluirPassados ? {} : { data: { gte: hoje } }),
+      ...(q ? {
+        OR: [
+          { titulo: { contains: q, mode: 'insensitive' } },
+          { criador: { nome: { contains: q, mode: 'insensitive' } } }
+        ]
+      } : {})
+    };
+
+    const [eventos, total] = await Promise.all([
+      prisma.evento.findMany({
+        where,
+        include: {
+          local: true,
+          criador: { select: { id: true, nome: true, email: true } },
+          eventoArtistas: { include: { artista: true } },
+          denuncias: {
+            select: { id: true, motivo: true, criadoEm: true, denunciante: { select: { id: true, nome: true } } },
+            orderBy: { criadoEm: 'desc' },
+            take: 5
+          },
+          _count: { select: { denuncias: true } }
+        },
+        orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }],
+        skip,
+        take: limite
+      }),
+      prisma.evento.count({ where })
+    ]);
+
+    return res.json({ eventos, total, pagina, temMais: skip + eventos.length < total });
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Falha ao listar eventos.' });
+  }
+});
+
 rotas.get('/moderacao/nao-moderados', autenticarObrigatorio, async (req, res) => {
   try {
     if (!(await validarModerador(req.usuario.id))) {

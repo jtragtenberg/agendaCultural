@@ -1286,3 +1286,51 @@ button:disabled {
   border-top: 1px solid rgba(122, 113, 201, 0.25);
   margin: 0.25rem 0;
 }
+
+.moderacao-filtros {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.moderacao-busca {
+  flex: 1;
+  min-width: 200px;
+}
+
+.moderacao-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.moderacao-pendente {
+  border-left: 4px solid #f59e0b;
+}
+
+.moderacao-passado {
+  opacity: 0.5;
+  filter: grayscale(0.4);
+}
+
+.moderacao-card-topo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.moderacao-card-topo h3 {
+  margin: 0;
+  flex: 1;
+}
+
+.moderacao-carregando {
+  text-align: center;
+  color: #888;
+  padding: 1rem;
+}
