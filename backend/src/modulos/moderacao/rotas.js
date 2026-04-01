@@ -50,8 +50,8 @@ rotas.get('/moderacao/eventos', autenticarObrigatorio, async (req, res) => {
     };
 
     const orderByData = ordem === 'data_desc'
-      ? [{ data: 'desc' }, { horaInicio: 'desc' }]
-      : [{ data: 'asc' }, { horaInicio: 'asc' }];
+      ? [{ criadoEm: 'desc' }]
+      : [{ criadoEm: 'asc' }];
 
     let eventos;
     const total = await prisma.evento.count({ where });
@@ -64,18 +64,18 @@ rotas.get('/moderacao/eventos', autenticarObrigatorio, async (req, res) => {
       if (skip < contPendentes) {
         const pendentes = await prisma.evento.findMany({
           where: wherePendentes, include: incluir,
-          orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }], skip, take: limite
+          orderBy: [{ criadoEm: 'desc' }], skip, take: limite
         });
         const faltam = limite - pendentes.length;
         const outros = faltam > 0 ? await prisma.evento.findMany({
           where: whereOutros, include: incluir,
-          orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }], skip: 0, take: faltam
+          orderBy: [{ criadoEm: 'desc' }], skip: 0, take: faltam
         }) : [];
         eventos = [...pendentes, ...outros];
       } else {
         eventos = await prisma.evento.findMany({
           where: whereOutros, include: incluir,
-          orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }], skip: skip - contPendentes, take: limite
+          orderBy: [{ criadoEm: 'desc' }], skip: skip - contPendentes, take: limite
         });
       }
     } else {
