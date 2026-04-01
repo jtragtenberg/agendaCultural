@@ -8,7 +8,9 @@
     "start": "node src/servidor.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "db:migrar": "node scripts/migrar-banco.js",
+    "db:exportar": "node scripts/migrar-banco.js --so-exportar"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

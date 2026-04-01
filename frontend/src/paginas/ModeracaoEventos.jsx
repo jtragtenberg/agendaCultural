@@ -23,9 +23,10 @@ export default function ModeracaoEventos({ token, ehModerador }) {
   const [carregando, setCarregando] = useState(false);
   const [busca, setBusca] = useState('');
   const [incluirPassados, setIncluirPassados] = useState(false);
-  const [ordenacao, setOrdenacao] = useState('pendente_primeiro');
   const sentinelaRef = useRef(null);
   const fetchIdRef = useRef(0);
+
+  const ordenacao = incluirPassados ? 'data_desc' : 'pendente_primeiro';
 
   const [editandoEventoId, setEditandoEventoId] = useState(null);
   const [formEvento, setFormEvento] = useState({
@@ -225,11 +226,6 @@ export default function ModeracaoEventos({ token, ehModerador }) {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
-            <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
-              <option value="pendente_primeiro">Pendentes primeiro</option>
-              <option value="data_asc">Data crescente</option>
-              <option value="data_desc">Data decrescente</option>
-            </select>
             <label className="moderacao-toggle">
               <input type="checkbox" checked={incluirPassados} onChange={(e) => setIncluirPassados(e.target.checked)} />
               Mostrar eventos passados
