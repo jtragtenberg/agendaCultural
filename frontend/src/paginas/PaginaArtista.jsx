@@ -2,6 +2,31 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../servicos/api';
 
+function BotaoSolicitarPropriedade({ id, token }) {
+  const [estado, setEstado] = useState('idle');
+  const [msg, setMsg] = useState('');
+
+  async function solicitar() {
+    try {
+      await api.solicitarPropriedadeArtista(id, token);
+      setEstado('enviado');
+      setMsg('Solicitação enviada! Um moderador irá analisar.');
+    } catch (e) {
+      setEstado('erro');
+      setMsg(e.message);
+    }
+  }
+
+  if (estado === 'enviado') return <p className="sucesso">{msg}</p>;
+  return (
+    <div>
+      <p>Esta página é pública. Edição disponível apenas para criador do artista ou moderadores.</p>
+      <button type="button" onClick={solicitar}>Solicitar propriedade desta página</button>
+      {estado === 'erro' ? <p className="erro">{msg}</p> : null}
+    </div>
+  );
+}
+
 export default function PaginaArtista({ token }) {
   const { id } = useParams();
   const [artista, setArtista] = useState(null);
@@ -107,6 +132,8 @@ export default function PaginaArtista({ token }) {
             <button type="submit">Salvar alterações</button>
           </form>
         </section>
+      ) : token ? (
+        <BotaoSolicitarPropriedade id={id} token={token} />
       ) : (
         <p>Esta página é pública. Edição disponível apenas para criador do artista ou moderadores.</p>
       )}

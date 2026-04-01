@@ -2,6 +2,31 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../servicos/api';
 
+function BotaoSolicitarPropriedade({ id, tipo, token }) {
+  const [estado, setEstado] = useState('idle'); // idle | enviado | erro
+  const [msg, setMsg] = useState('');
+
+  async function solicitar() {
+    try {
+      await api.solicitarPropriedadeLocal(id, token);
+      setEstado('enviado');
+      setMsg('Solicitação enviada! Um moderador irá analisar.');
+    } catch (e) {
+      setEstado('erro');
+      setMsg(e.message);
+    }
+  }
+
+  if (estado === 'enviado') return <p className="sucesso">{msg}</p>;
+  return (
+    <div>
+      <p>Esta página é pública. Edição disponível apenas para criador do local ou moderadores.</p>
+      <button type="button" onClick={solicitar}>Solicitar propriedade desta página</button>
+      {estado === 'erro' ? <p className="erro">{msg}</p> : null}
+    </div>
+  );
+}
+
 export default function PaginaLocal({ token }) {
   const { id } = useParams();
   const [local, setLocal] = useState(null);
@@ -132,6 +157,8 @@ export default function PaginaLocal({ token }) {
             <button type="submit">Salvar alterações</button>
           </form>
         </section>
+      ) : token ? (
+        <BotaoSolicitarPropriedade id={id} tipo="local" token={token} />
       ) : (
         <p>Esta página é pública. Edição disponível apenas para criador do local ou moderadores.</p>
       )}

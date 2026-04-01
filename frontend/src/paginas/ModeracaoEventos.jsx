@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../servicos/api';
 
 const HOJE = new Date();
@@ -37,7 +38,10 @@ export default function ModeracaoEventos({ token, ehModerador }) {
   const [editandoArtistaId, setEditandoArtistaId] = useState(null);
   const [formArtista, setFormArtista] = useState({ nome: '', descricao: '', instagram: '', website: '' });
 
+  const [solicitacoes, setSolicitacoes] = useState([]);
+
   const [erro, setErro] = useState('');
+  const navegar = useNavigate();
   const [mensagem, setMensagem] = useState('');
 
   // ── Carregar eventos (paginado) ───────────────────────────
@@ -85,6 +89,9 @@ export default function ModeracaoEventos({ token, ehModerador }) {
     }
     if (aba === 'artistas' && artistas.length === 0) {
       api.listarArtistasModeracao(token).then(setArtistas).catch((e) => setErro(e.message));
+    }
+    if (aba === 'solicitacoes') {
+      api.listarSolicitacoes(token).then(setSolicitacoes).catch((e) => setErro(e.message));
     }
   }, [aba, token, ehModerador]);
 
@@ -193,9 +200,9 @@ export default function ModeracaoEventos({ token, ehModerador }) {
       <h2>Moderação de Conteúdo</h2>
 
       <div className="admin-abas">
-        {['eventos', 'locais', 'artistas'].map((a) => (
+        {['eventos', 'locais', 'artistas', 'solicitacoes'].map((a) => (
           <button key={a} className={`admin-aba${aba === a ? ' admin-aba-ativa' : ''}`} onClick={() => setAba(a)}>
-            {a.charAt(0).toUpperCase() + a.slice(1)}
+            {a === 'solicitacoes' ? 'Solicitações' : a.charAt(0).toUpperCase() + a.slice(1)}
           </button>
         ))}
       </div>
@@ -303,14 +310,26 @@ export default function ModeracaoEventos({ token, ehModerador }) {
 
       {/* ── ABA LOCAIS ── */}
       {aba === 'locais' ? (
-        <section className="lista-eventos">
+        <section className="moderacao-grid">
           {locais.map((local) => (
-            <article key={local.id} className="card-evento moderacao-card">
-              <h3>{local.nome}</h3>
-              <p>{local.endereco}</p>
-              <p><strong>Bairro:</strong> {local.bairro} | <strong>Cidade:</strong> {local.cidade}</p>
-              <p><strong>Eventos vinculados:</strong> {local._count?.eventos || 0}</p>
-              <div className="acoes-card">
+            <div key={local.id} className="moderacao-grid-card">
+              <div
+                className="moderacao-grid-media"
+                onClick={() => navegar(`/locais/${local.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && navegar(`/locais/${local.id}`)}
+              >
+                {local.fotoUrl
+                  ? <img src={local.fotoUrl} alt={local.nome} />
+                  : <div className="moderacao-grid-placeholder">📍</div>}
+              </div>
+              <div className="moderacao-grid-info">
+                <strong onClick={() => navegar(`/locais/${local.id}`)} style={{ cursor: 'pointer' }}>{local.nome}</strong>
+                <small>{local.bairro}</small>
+                <small>{local._count?.eventos || 0} eventos</small>
+              </div>
+              <div className="acoes-card moderacao-grid-acoes">
                 <button onClick={() => {
                   setEditandoLocalId(local.id);
                   setFormLocal({ nome: local.nome || '', endereco: local.endereco || '', bairro: local.bairro || '', cidade: local.cidade || '', latitude: local.latitude ?? '', longitude: local.longitude ?? '' });
@@ -319,32 +338,45 @@ export default function ModeracaoEventos({ token, ehModerador }) {
               </div>
               {editandoLocalId === local.id ? (
                 <section className="formulario moderacao-form">
-                  <input value={formLocal.nome} onChange={(e) => setFormLocal((a) => ({ ...a, nome: e.target.value }))} />
-                  <input value={formLocal.endereco} onChange={(e) => setFormLocal((a) => ({ ...a, endereco: e.target.value }))} />
-                  <input value={formLocal.bairro} onChange={(e) => setFormLocal((a) => ({ ...a, bairro: e.target.value }))} />
-                  <input value={formLocal.cidade} onChange={(e) => setFormLocal((a) => ({ ...a, cidade: e.target.value }))} />
-                  <input type="number" step="0.0000001" value={formLocal.latitude} onChange={(e) => setFormLocal((a) => ({ ...a, latitude: e.target.value }))} />
-                  <input type="number" step="0.0000001" value={formLocal.longitude} onChange={(e) => setFormLocal((a) => ({ ...a, longitude: e.target.value }))} />
+                  <input value={formLocal.nome} onChange={(e) => setFormLocal((a) => ({ ...a, nome: e.target.value }))} placeholder="Nome" />
+                  <input value={formLocal.endereco} onChange={(e) => setFormLocal((a) => ({ ...a, endereco: e.target.value }))} placeholder="Endereço" />
+                  <input value={formLocal.bairro} onChange={(e) => setFormLocal((a) => ({ ...a, bairro: e.target.value }))} placeholder="Bairro" />
+                  <input value={formLocal.cidade} onChange={(e) => setFormLocal((a) => ({ ...a, cidade: e.target.value }))} placeholder="Cidade" />
+                  <input type="number" step="0.0000001" value={formLocal.latitude} onChange={(e) => setFormLocal((a) => ({ ...a, latitude: e.target.value }))} placeholder="Latitude" />
+                  <input type="number" step="0.0000001" value={formLocal.longitude} onChange={(e) => setFormLocal((a) => ({ ...a, longitude: e.target.value }))} placeholder="Longitude" />
                   <div className="acoes-card">
                     <button onClick={() => salvarLocal(local.id)}>Salvar</button>
                     <button onClick={() => setEditandoLocalId(null)}>Cancelar</button>
                   </div>
                 </section>
               ) : null}
-            </article>
+            </div>
           ))}
         </section>
       ) : null}
 
       {/* ── ABA ARTISTAS ── */}
       {aba === 'artistas' ? (
-        <section className="lista-eventos">
+        <section className="moderacao-grid">
           {artistas.map((artista) => (
-            <article key={artista.id} className="card-evento moderacao-card">
-              <h3>{artista.nome}</h3>
-              <p>{artista.descricao || 'Sem descrição'}</p>
-              <p><strong>Vínculos em eventos:</strong> {artista._count?.eventoArtistas || 0}</p>
-              <div className="acoes-card">
+            <div key={artista.id} className="moderacao-grid-card">
+              <div
+                className="moderacao-grid-media"
+                onClick={() => navegar(`/artistas/${artista.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && navegar(`/artistas/${artista.id}`)}
+              >
+                {artista.fotoUrl
+                  ? <img src={artista.fotoUrl} alt={artista.nome} />
+                  : <div className="moderacao-grid-placeholder">🎵</div>}
+              </div>
+              <div className="moderacao-grid-info">
+                <strong onClick={() => navegar(`/artistas/${artista.id}`)} style={{ cursor: 'pointer' }}>{artista.nome}</strong>
+                <small>{(artista.descricao || '').slice(0, 60)}{artista.descricao?.length > 60 ? '…' : ''}</small>
+                <small>{artista._count?.eventoArtistas || 0} vínculos</small>
+              </div>
+              <div className="acoes-card moderacao-grid-acoes">
                 <button onClick={() => {
                   setEditandoArtistaId(artista.id);
                   setFormArtista({ nome: artista.nome || '', descricao: artista.descricao || '', instagram: artista.instagram || '', website: artista.website || '' });
@@ -363,6 +395,40 @@ export default function ModeracaoEventos({ token, ehModerador }) {
                   </div>
                 </section>
               ) : null}
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {/* ── ABA SOLICITAÇÕES ── */}
+      {aba === 'solicitacoes' ? (
+        <section className="lista-eventos">
+          {solicitacoes.length === 0 ? <p>Nenhuma solicitação pendente.</p> : null}
+          {solicitacoes.map((s) => (
+            <article key={s.id} className="card-evento moderacao-card">
+              <p>
+                <strong>{s.solicitante?.nome}</strong> ({s.solicitante?.email}) quer ser dono de{' '}
+                <strong>{s.tipo}</strong>: <em>{s.nomeReferencia}</em>
+              </p>
+              <p><small>Solicitado em {new Date(s.criadoEm).toLocaleDateString('pt-BR')}</small></p>
+              <div className="acoes-card">
+                <button onClick={async () => {
+                  limpar();
+                  try {
+                    await api.responderSolicitacao(s.id, 'aprovar', token);
+                    setSolicitacoes((ant) => ant.filter((x) => x.id !== s.id));
+                    setMensagem('Solicitação aprovada.');
+                  } catch (e) { setErro(e.message); }
+                }}>Aprovar</button>
+                <button onClick={async () => {
+                  limpar();
+                  try {
+                    await api.responderSolicitacao(s.id, 'rejeitar', token);
+                    setSolicitacoes((ant) => ant.filter((x) => x.id !== s.id));
+                    setMensagem('Solicitação rejeitada.');
+                  } catch (e) { setErro(e.message); }
+                }}>Rejeitar</button>
+              </div>
             </article>
           ))}
         </section>
