@@ -1,8 +1,12 @@
 const express = require('express');
 const prisma = require('../../prisma');
 const { openaiKey } = require('../../config');
+const { autenticarObrigatorio } = require('../../middlewares');
 
 const router = express.Router();
+const SCRAPER_URL = process.env.SCRAPER_URL || 'http://scraper:5000';
+
+// ── Prompt ────────────────────────────────────────────────────────────────────
 
 const PROMPT_SISTEMA = `Você é um assistente que extrai informações de eventos culturais a partir de textos livres (posts do Instagram, notícias, descrições curtas).
 
@@ -13,34 +17,51 @@ Retorne SOMENTE um JSON válido com os seguintes campos (use null para campos n�
   "data": "YYYY-MM-DD" | null,
   "horaInicio": "HH:MM" | null,
   "horaFim": "HH:MM" | null,
-  "nomeLocal": string | null,
-  "enderecoLocal": string | null,
-  "bairroLocal": string | null,
-  "cidadeLocal": "Recife",
-  "nomeArtista": string | null
+  "ingresso": string | null,
+  "linkIngresso": string | null,
+  "linkDivulgacao": string | null,
+  "artistas": [
+    {
+      "nome": string,
+      "instagram": string | null,
+      "descricao": string | null
+    }
+  ],
+  "local": {
+    "nome": string | null,
+    "instagram": string | null,
+    "endereco": string | null,
+    "bairro": string | null,
+    "cidade": string | null
+  }
 }
 
 Regras:
 - data deve estar no formato YYYY-MM-DD
 - horaInicio e horaFim devem estar no formato HH:MM (24h)
-- Se o texto mencionar apenas hora de início, deixe horaFim null
 - Se o texto não mencionar data, deixe data null
-- Para o campo descricao, use o texto original do evento adaptado, sem hashtags e sem mencionar preços ou links
-- nomeArtista: apenas o nome principal do artista/grupo (se houver vários, o mais destacado)
-- nomeLocal: nome do espaço/venue (teatro, casa de shows, bar, etc)
-- Nunca invente informações que não estejam no texto
-- A primeira linha da mensagem do usuário contém a data atual. Use-a para inferir o ano correto quando o texto não mencionar o ano explicitamente. Nunca use um ano anterior à data atual`;
+- titulo: se for um evento musical e houver informação sobre o/a artista ou o estilo, incorpore isso naturalmente no título (ex: "Noite de Bossa Nova com Ana Lima" em vez de só "Show no Bar X"). Se não houver contexto suficiente, use o título literal do evento
+- descricao: escreva com suas próprias palavras — nunca copie frases do texto de origem. Evite linguagem publicitária ("não perca!", "imperdível", "venha curtir"), chamadas cômicas ou irônicas. Use tom descritivo e informativo. O texto deve deixar claro: o que é o evento, quem se apresenta, qual o estilo musical (se mencionado), e se faz parte de uma série ou evento maior (se mencionado). Se houver informações sobre o/a artista (estilo, influências, trajetória), inclua de forma resumida e natural. Sem hashtags, sem preços, sem links
+- ingresso: texto descritivo do valor (ex: "Gratuito", "R$ 30", "R$ 20 a R$ 50", "Couvert artístico")
+- linkIngresso: URL para compra de ingresso, se mencionado
+- linkDivulgacao: URL do próprio post de divulgação do evento (Instagram, site, etc), se mencionado — não confundir com perfil de artista ou local
+- artistas: todos os artistas/grupos que se apresentam no evento (não o local/espaço). Para cada um, extraia o nome artístico, o @instagram se mencionado, e uma breve descrição baseada no texto
+- local.nome: nome do espaço/venue (teatro, casa de shows, bar, etc)
+- local.instagram: @handle do espaço, se mencionado
+- local.endereco, local.bairro, local.cidade: se mencionados no texto
+- A primeira linha da mensagem do usuário contém a data atual. Use-a para inferir o ano correto quando o texto não mencionar o ano explicitamente. Nunca use um ano anterior à data atual
+- Nunca invente informações que não estejam no texto`;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function chamarOpenAI(texto) {
-  if (!openaiKey) {
-    throw new Error('OPENAI_API_KEY não configurada no servidor.');
-  }
+  if (!openaiKey) throw new Error('OPENAI_API_KEY não configurada no servidor.');
 
   const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openaiKey}`,
+      Authorization: `Bearer ${openaiKey}`,
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
@@ -50,7 +71,7 @@ async function chamarOpenAI(texto) {
         { role: 'user', content: texto },
       ],
       temperature: 0.2,
-      max_tokens: 500,
+      max_tokens: 800,
     }),
   });
 
@@ -63,55 +84,190 @@ async function chamarOpenAI(texto) {
   return JSON.parse(dados.choices[0].message.content);
 }
 
-async function buscarLocalExistente(nome) {
-  if (!nome) return null;
-  const termo = nome.trim().toLowerCase();
-  const locais = await prisma.local.findMany({
-    where: {
-      nome: { contains: termo, mode: 'insensitive' },
-    },
-    take: 3,
-    orderBy: { nome: 'asc' },
-  });
-  return locais;
-}
-
-async function buscarArtistaExistente(nome) {
-  if (!nome) return null;
-  const termo = nome.trim().toLowerCase();
-  const artistas = await prisma.artista.findMany({
-    where: {
-      nome: { contains: termo, mode: 'insensitive' },
-    },
-    take: 3,
-    orderBy: { nome: 'asc' },
-  });
-  return artistas;
-}
-
-router.post('/ia/extrair-evento', async (req, res, next) => {
+// Busca endereço no OpenStreetMap Nominatim (gratuito, sem chave)
+async function buscarEndereco(nome, cidade = 'Recife') {
   try {
-    const { texto } = req.body;
+    const q = encodeURIComponent(`${nome}, ${cidade}, Pernambuco, Brasil`);
+    const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&addressdetails=1`;
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'AgendaCulturalRecife/1.0 (contato@agenda.rec.br)' },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) return null;
+    const dados = await resp.json();
+    if (!dados.length) return null;
+    const r = dados[0];
+    const addr = r.address || {};
+    return {
+      enderecoCompleto: r.display_name,
+      rua: [addr.road, addr.house_number].filter(Boolean).join(', ') || null,
+      bairro: addr.suburb || addr.neighbourhood || addr.quarter || null,
+      cidade: addr.city || addr.town || addr.municipality || null,
+      lat: r.lat || null,
+      lon: r.lon || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Busca artista no banco por nome (fuzzy insensitive)
+async function buscarArtistaNoBanco(nome) {
+  if (!nome) return null;
+  const resultados = await prisma.artista.findMany({
+    where: { nome: { contains: nome.trim(), mode: 'insensitive' } },
+    take: 3,
+    orderBy: { nome: 'asc' },
+  });
+  return resultados[0] || null;
+}
+
+// Busca local no banco por nome
+async function buscarLocalNoBanco(nome) {
+  if (!nome) return null;
+  const resultados = await prisma.local.findMany({
+    where: { nome: { contains: nome.trim(), mode: 'insensitive' } },
+    take: 3,
+    orderBy: { nome: 'asc' },
+  });
+  return resultados[0] || null;
+}
+
+// Busca post do Instagram via scraper
+async function buscarPostInstagram(url) {
+  const resp = await fetch(`${SCRAPER_URL}/post`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!resp.ok) {
+    const erro = await resp.json().catch(() => ({}));
+    throw new Error(erro?.erro || `Erro ao buscar post: ${resp.status}`);
+  }
+  return resp.json();
+}
+
+// Busca perfil do Instagram via scraper (bio + link externo)
+async function buscarPerfilInstagram(handle) {
+  try {
+    const resp = await fetch(`${SCRAPER_URL}/perfil`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch {
+    return null;
+  }
+}
+
+// ── Rotas ─────────────────────────────────────────────────────────────────────
+
+// POST /ia/extrair-evento
+// Body: { texto?: string, urlInstagram?: string }
+router.post('/ia/extrair-evento', autenticarObrigatorio, async (req, res, next) => {
+  try {
+    let { texto, urlInstagram } = req.body;
+    let postData = null;
+
+    // Se forneceu URL do Instagram, busca o post via scraper
+    if (urlInstagram && urlInstagram.trim()) {
+      try {
+        postData = await buscarPostInstagram(urlInstagram.trim());
+        const perfis = [postData.handle, ...postData.colaboradores.map(c => c.handle)]
+          .map(h => `@${h}`)
+          .join(', ');
+        texto = `Perfis envolvidos no post: ${perfis}\n\n${postData.legenda}`;
+      } catch (e) {
+        return res.status(502).json({ erro: `Falha ao buscar post do Instagram: ${e.message}` });
+      }
+    }
+
     if (!texto || !texto.trim()) {
-      return res.status(400).json({ erro: 'Campo "texto" é obrigatório.' });
+      return res.status(400).json({ erro: 'Forneça "texto" ou "urlInstagram".' });
     }
 
     const hoje = new Date().toLocaleDateString('pt-BR', {
       timeZone: 'America/Recife',
-      day: '2-digit', month: '2-digit', year: 'numeric'
+      day: '2-digit', month: '2-digit', year: 'numeric',
     });
     const textoComContexto = `Data atual: ${hoje}\n\n${texto.trim()}`;
     const extraido = await chamarOpenAI(textoComContexto);
 
-    const [locaisEncontrados, artistasEncontrados] = await Promise.all([
-      buscarLocalExistente(extraido.nomeLocal),
-      buscarArtistaExistente(extraido.nomeArtista),
-    ]);
+    // Garante que artistas é sempre array
+    const artistasExtraidos = Array.isArray(extraido.artistas) ? extraido.artistas : [];
+
+    // Separa artistas já no banco dos que precisam ser criados pelo usuário
+    const artistasEncontrados = [];
+    const artistasSugeridos = [];
+
+    for (const a of artistasExtraidos) {
+      if (!a.nome) continue;
+      const encontrado = await buscarArtistaNoBanco(a.nome);
+      if (encontrado) {
+        artistasEncontrados.push(encontrado);
+      } else {
+        artistasSugeridos.push({
+          nome: a.nome,
+          instagram: a.instagram || null,
+          descricao: a.descricao || null,
+        });
+      }
+    }
+
+    // Resolve local: busca no banco
+    const localExtraido = extraido.local || {};
+    let localEncontrado = null;
+    let enderecoSugerido = null;
+
+    if (localExtraido.nome) {
+      localEncontrado = await buscarLocalNoBanco(localExtraido.nome);
+
+      if (!localEncontrado) {
+        enderecoSugerido = await buscarEndereco(
+          localExtraido.nome,
+          localExtraido.cidade || 'Recife'
+        );
+      }
+    }
+
+    // Se a legenda menciona "link na bio", tenta buscar o link externo do perfil do postador
+    let linkBio = null;
+    if (postData?.legenda && /link\s*(na|no|da|do|em)?\s*bio/i.test(postData.legenda)) {
+      const perfil = await buscarPerfilInstagram(postData.handle);
+      if (perfil?.linkBio) linkBio = perfil.linkBio;
+    }
 
     res.json({
-      extraido,
-      locaisEncontrados: locaisEncontrados || [],
-      artistasEncontrados: artistasEncontrados || [],
+      extraido: {
+        titulo: extraido.titulo || null,
+        descricao: extraido.descricao || null,
+        data: extraido.data || null,
+        horaInicio: extraido.horaInicio || null,
+        horaFim: extraido.horaFim || null,
+        ingresso: extraido.ingresso || null,
+        linkIngresso: extraido.linkIngresso || linkBio || null,
+        links: extraido.linkDivulgacao || null,
+        local: localExtraido,
+      },
+      // Artistas já encontrados no banco (auto-selecionados)
+      artistasEncontrados,
+      // Artistas extraídos mas não cadastrados — o frontend cria ao salvar o evento
+      artistasSugeridos,
+      // Local encontrado no banco (se houver)
+      localEncontrado: localEncontrado || null,
+      // Sugestão de endereço do Nominatim (se local não foi encontrado no banco)
+      enderecoSugerido: enderecoSugerido || null,
+      // Dados brutos do post do Instagram (se veio de URL)
+      postInstagram: postData ? {
+        thumbnail: postData.thumbnail,
+        url: postData.url,
+        handle: postData.handle,
+        colaboradores: postData.colaboradores,
+      } : null,
     });
   } catch (e) {
     next(e);

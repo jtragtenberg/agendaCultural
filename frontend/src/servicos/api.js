@@ -280,10 +280,10 @@ export const api = {
       headers: cabecalhos(token)
     }),
 
-  extrairEvento: (texto) =>
+  extrairEvento: (payload, token) =>
     requisicao('/ia/extrair-evento', {
       method: 'POST',
-      headers: cabecalhos(),
-      body: JSON.stringify({ texto })
+      headers: cabecalhos(token),
+      body: JSON.stringify(typeof payload === 'string' ? { texto: payload } : payload)
     })
 };

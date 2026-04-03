@@ -7,6 +7,7 @@ Serviço combinado:
 
 import glob
 import os
+import re
 import subprocess
 import threading
 import time
@@ -51,6 +52,109 @@ def fazer_login():
         return jsonify({"erro": "Usuário ou senha incorretos."}), 401
     except instaloader.exceptions.TwoFactorAuthRequiredException:
         return jsonify({"erro": "Conta com autenticação em dois fatores. Use o script manual."}), 422
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+@app.route("/post", methods=["POST"])
+def buscar_post():
+    """Busca dados de um post específico pelo URL do Instagram."""
+    dados = request.get_json() or {}
+    url = (dados.get("url") or "").strip()
+    if not url:
+        return jsonify({"erro": "url é obrigatório."}), 400
+
+    # Extrai o shortcode da URL: /p/SHORTCODE/ ou /reel/SHORTCODE/
+    match = re.search(r"/(?:p|reels?|tv)/([A-Za-z0-9_-]+)", url)
+    if not match:
+        return jsonify({"erro": "URL do Instagram inválida."}), 400
+    shortcode = match.group(1)
+
+    arquivos = sorted(glob.glob(os.path.join(SESSAO_DIR, "sessao-*")))
+    if not arquivos:
+        return jsonify({"erro": "Nenhuma sessão do Instagram encontrada."}), 503
+
+    usuario = os.path.basename(arquivos[-1]).replace("sessao-", "")
+    L = instaloader.Instaloader(
+        download_pictures=False,
+        download_videos=False,
+        download_video_thumbnails=False,
+        download_geotags=False,
+        download_comments=False,
+        save_metadata=False,
+        quiet=True,
+    )
+    L.load_session_from_file(usuario, arquivos[-1])
+
+    try:
+        post = instaloader.Post.from_shortcode(L.context, shortcode)
+
+        thumbnail = None
+        try:
+            thumbnail = post.url
+        except Exception:
+            pass
+
+        colaboradores = []
+        try:
+            for coautor in post.coauthor_producers:
+                colaboradores.append({
+                    "handle": coautor.username,
+                    "url": f"https://www.instagram.com/{coautor.username}/",
+                })
+        except Exception:
+            pass
+
+        return jsonify({
+            "shortcode": shortcode,
+            "url": f"https://www.instagram.com/p/{shortcode}/",
+            "handle": post.owner_username,
+            "data": post.date_utc.strftime("%Y-%m-%d"),
+            "legenda": post.caption or "",
+            "thumbnail": thumbnail,
+            "colaboradores": colaboradores,
+        })
+
+    except instaloader.exceptions.LoginRequiredException:
+        return jsonify({"erro": "Sessão expirada. Faça login novamente."}), 503
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+@app.route("/perfil", methods=["POST"])
+def buscar_perfil():
+    """Busca dados de um perfil do Instagram pelo handle."""
+    dados = request.get_json() or {}
+    handle = (dados.get("handle") or "").strip().lstrip("@")
+    if not handle:
+        return jsonify({"erro": "handle é obrigatório."}), 400
+
+    arquivos = sorted(glob.glob(os.path.join(SESSAO_DIR, "sessao-*")))
+    if not arquivos:
+        return jsonify({"erro": "Nenhuma sessão do Instagram encontrada."}), 503
+
+    usuario = os.path.basename(arquivos[-1]).replace("sessao-", "")
+    L = instaloader.Instaloader(
+        download_pictures=False,
+        download_videos=False,
+        download_video_thumbnails=False,
+        download_geotags=False,
+        download_comments=False,
+        save_metadata=False,
+        quiet=True,
+    )
+    L.load_session_from_file(usuario, arquivos[-1])
+
+    try:
+        perfil = instaloader.Profile.from_username(L.context, handle)
+        return jsonify({
+            "handle": perfil.username,
+            "nome": perfil.full_name or None,
+            "bio": perfil.biography or None,
+            "linkBio": perfil.external_url or None,
+        })
+    except instaloader.exceptions.LoginRequiredException:
+        return jsonify({"erro": "Sessão expirada. Faça login novamente."}), 503
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 

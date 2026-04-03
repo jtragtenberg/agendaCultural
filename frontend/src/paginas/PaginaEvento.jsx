@@ -132,8 +132,8 @@ function FormularioEdicao({ evento, token, onSalvo, onCancelar }) {
       </label>
 
       <label>
-        Link de divulgação
-        <input value={formulario.links} onChange={(e) => setFormulario((a) => ({ ...a, links: e.target.value }))} placeholder="https://..." />
+        Link do post de divulgação
+        <input value={formulario.links} onChange={(e) => setFormulario((a) => ({ ...a, links: e.target.value }))} placeholder="https://www.instagram.com/p/..." />
       </label>
 
       <label>
