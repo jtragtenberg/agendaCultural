@@ -513,6 +513,79 @@ button:disabled {
   opacity: 0.85;
 }
 
+/* ── Novo local — campos extras ── */
+.novo-local-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.novo-local-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.novo-local-campos input {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.5rem;
+}
+
+/* ── Artistas sugeridos pela IA ── */
+.artistas-sugeridos {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.artistas-sugeridos-titulo {
+  font-size: 0.78rem;
+  color: var(--texto-fraco);
+  margin: 0;
+}
+
+.artista-sugerido-card {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  background: var(--fundo-card, #f9f9f9);
+  border: 1px solid var(--borda, #e0e0e0);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.artista-sugerido-campos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.artista-sugerido-campos input,
+.artista-sugerido-campos textarea {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.artista-sugerido-remover {
+  background: none;
+  border: none;
+  color: var(--texto-fraco);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.2rem 0.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.artista-sugerido-remover:hover {
+  color: #c0392b;
+}
+
 .lista-sugestoes {
   margin: 0;
   padding: 0.28rem;
@@ -1155,15 +1228,37 @@ button:disabled {
 }
 
 .badge-novo-insta {
-  position: absolute;
-  top: 0.65rem;
-  right: 0.75rem;
   font-size: 0.65rem;
   font-weight: 700;
   background: var(--primaria);
   color: #fff;
   border-radius: 999px;
   padding: 0.1rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.post-acoes {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 1rem 0.25rem;
+}
+
+.btn-adicionar-agenda-post {
+  background: none;
+  border: 1.5px solid var(--primaria);
+  color: var(--primaria);
+  border-radius: 20px;
+  padding: 0.3rem 1.1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-adicionar-agenda-post:hover {
+  background: var(--primaria);
+  color: #fff;
 }
 
 .instagram-sentinela {

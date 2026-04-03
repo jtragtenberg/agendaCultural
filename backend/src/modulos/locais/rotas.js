@@ -29,6 +29,7 @@ rotas.get('/', async (req, res) => {
       select: {
         id: true,
         nome: true,
+        instagram: true,
         endereco: true,
         bairro: true,
         cidade: true,
@@ -76,7 +77,7 @@ rotas.get('/:id', autenticarOpcional, async (req, res) => {
 
 rotas.post('/', autenticarObrigatorio, async (req, res) => {
   try {
-    const { nome, endereco = '', bairro = '', cidade = 'Recife', latitude, longitude } = req.body;
+    const { nome, instagram, endereco = '', bairro = '', cidade = 'Recife', latitude, longitude } = req.body;
 
     if (!nome) {
       return res.status(400).json({ erro: 'Campo obrigatório: nome.' });
@@ -85,6 +86,7 @@ rotas.post('/', autenticarObrigatorio, async (req, res) => {
     const local = await prisma.local.create({
       data: {
         nome,
+        instagram: instagram || null,
         endereco,
         bairro,
         cidade,
@@ -135,6 +137,7 @@ rotas.put('/:id', autenticarObrigatorio, async (req, res) => {
       where: { id: req.params.id },
       data: {
         nome: req.body.nome,
+        instagram: req.body.instagram !== undefined ? (req.body.instagram || null) : undefined,
         endereco: req.body.endereco,
         bairro: req.body.bairro,
         cidade: req.body.cidade,

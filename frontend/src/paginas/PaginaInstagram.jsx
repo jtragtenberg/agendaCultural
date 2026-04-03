@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import ModalCriarEvento from '../componentes/ModalCriarEvento';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const CHAVE_ULTIMO_VISTO = 'agenda-cultural-recife:instagram-ultimo-visto';
@@ -84,13 +85,12 @@ function FormLogin({ onConectado }) {
 
 // ── Card de post ───────────────────────────────────────────────────────────────
 
-function CardPost({ post, novo, refPrimeiro }) {
+function CardPost({ post, novo, refPrimeiro, token, onAbrirCriarEvento }) {
   const [expandida, setExpandida] = useState(false);
   const longa = (post.legenda || '').length > 200;
 
   return (
     <article className="card-post-instagram" ref={refPrimeiro}>
-      {novo && <span className="badge-novo-insta">novo</span>}
       <div className="post-cabecalho-perfil">
         {post.fotoPerfil ? (
           <img
@@ -106,6 +106,7 @@ function CardPost({ post, novo, refPrimeiro }) {
           @{post.handle}
         </a>
         <span className="post-data-instagram">{post.dataFormatada}</span>
+        {novo && <span className="badge-novo-insta">novo</span>}
       </div>
       {post.colaboradores?.length > 0 && (
         <div className="post-colaboradores">
@@ -116,6 +117,13 @@ function CardPost({ post, novo, refPrimeiro }) {
               {i < post.colaboradores.length - 1 && ', '}
             </span>
           ))}
+        </div>
+      )}
+      {token && (
+        <div className="post-acoes">
+          <button className="btn-adicionar-agenda-post" onClick={() => onAbrirCriarEvento(post.url)}>
+            + adicionar à agenda
+          </button>
         </div>
       )}
       {post.thumbnail && (
@@ -276,6 +284,8 @@ export default function PaginaInstagram({ sessao: sessaoProp }) {
   });
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
+
+  const [urlModalCriar, setUrlModalCriar] = useState(null);
 
   const sentinelaRef = useRef(null);
   const primeirNovoRef = useRef(null);
@@ -457,6 +467,14 @@ export default function PaginaInstagram({ sessao: sessaoProp }) {
 
   return (
     <>
+      {urlModalCriar && token && (
+        <ModalCriarEvento
+          token={token}
+          urlInstagramPre={urlModalCriar}
+          onFechar={() => setUrlModalCriar(null)}
+          onEventoCriado={() => setUrlModalCriar(null)}
+        />
+      )}
       <div className="instagram-cabecalho-pagina">
         <h1>Posts do Instagram</h1>
         <span className="instagram-atualizado">Atualizado em: {atualizado}</span>
@@ -494,6 +512,8 @@ export default function PaginaInstagram({ sessao: sessaoProp }) {
               post={post}
               novo={eNovo(post)}
               refPrimeiro={i === indicePrimeiroNovo ? primeirNovoRef : null}
+              token={token}
+              onAbrirCriarEvento={setUrlModalCriar}
             />
           ))}
 

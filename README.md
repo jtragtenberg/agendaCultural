@@ -43,27 +43,24 @@ docker-compose.prod.yml
 
 - Eventos aparecem imediatamente ao serem criados (status `pendente`); apenas `rejeitado` fica oculto.
 - Moderação de evento por status: `pendente`, `aprovado`, `rejeitado`, `sinalizado`.
-- Usuários com reputação alta ou verificados podem autoaprovar eventos.
 - Limite para usuário novo: até 3 eventos em 24h.
 - Verificação de duplicidade por local + data + similaridade de título.
 - Denúncia de evento com bloqueio de denúncia duplicada por usuário.
 - Evento recebe status `sinalizado` ao atingir limiar de denúncias.
-- Sistema de reputação:
-  - evento aprovado: +5
-  - evento rejeitado: -3
-  - evento sinalizado por denúncias: -10
-- Criação de evento com autocomplete para `locais` e `artistas`, incluindo criação inline de novos registros.
-- Páginas públicas de artistas e locais com edição restrita a criador ou moderador.
+- Criador do evento pode editar ou apagar o próprio evento a qualquer momento.
+- Criação de evento com autocomplete para `locais` e `artistas` — digitar o nome e confirmar basta para criar um novo registro sem formulário expandido.
+- Páginas públicas de artistas e locais com edição restrita a criador, dono da página ou moderador.
+- Qualquer evento visível no calendário (pendente, sinalizado ou aprovado) pode ser adicionado à agenda pessoal.
 
 ## Funções de usuário
 
 | Função | Acesso |
 |---|---|
-| `usuario` | criar eventos, agenda pessoal |
-| `moderador` | aprovar/rejeitar/editar/apagar eventos, locais e artistas |
+| `usuario` | criar eventos, editar/apagar os próprios eventos, agenda pessoal |
+| `moderador` | aprovar/rejeitar/editar/apagar qualquer evento, local e artista |
 | `administrador` | painel admin completo + todas as ações de moderador |
 
-Moderadores são identificados pelo campo `verificado = true` ou `reputacao >= 200`.
+A função é definida pelo campo `funcao` no modelo `Usuario` (enum: `usuario`, `moderador`, `administrador`).
 
 ## Modelo de dados (Prisma/PostgreSQL)
 
@@ -77,8 +74,25 @@ As tabelas usam nomes em português e UUID:
 - `agenda_eventos`
 - `seguidores`
 - `denuncias_evento`
+- `solicitacoes_propriedade`
 
 Arquivo: `backend/prisma/schema.prisma`.
+
+### Campos do evento
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `titulo` | String | Obrigatório |
+| `descricao` | String | Obrigatório |
+| `localId` | UUID | Referência ao local |
+| `data` | DateTime | Meia-noite UTC (dia do evento) |
+| `horaInicio` | String | Formato `HH:MM` |
+| `horaFim` | String? | Formato `HH:MM` |
+| `ingresso` | String? | Ex: "Gratuito", "R$ 20" |
+| `links` | String? | Link de divulgação |
+| `linkIngresso` | String? | Link para compra de ingresso |
+| `imagemUrl` | String? | URL da imagem de capa |
+| `status` | Enum | `pendente`, `aprovado`, `rejeitado`, `sinalizado` |
 
 ## Interface
 
@@ -93,7 +107,12 @@ Cada camada pode ser ativada ou desativada individualmente pela barra lateral es
 
 O botão `+` no canto superior direito de cada dia (visível quando logado) abre um modal para criar um evento, com a data já preenchida e horário padrão de 19h–21h.
 
-O modal de criação inclui um campo de extração por IA: cole uma descrição do evento (post do Instagram, notícia, texto curto) e clique em **Preencher formulário com IA** para pré-preencher os campos automaticamente.
+O modal de criação inclui:
+- **Extração por IA**: cole uma descrição do evento (post do Instagram, notícia, texto curto) e clique em **Preencher formulário com IA** para pré-preencher os campos. A IA recebe a data atual como contexto para inferir o ano correto.
+- **Criação rápida de local/artista**: se o local ou artista não existir, digitar o nome e clicar em "Criar [nome]" basta — sem formulário expandido.
+- **Campos extras**: ingresso (valor/tipo), link de divulgação, link para compra de ingresso, URL de imagem.
+
+Cards do calendário exibem horário, local e — quando preenchido — o valor do ingresso.
 
 ### Configurações do usuário
 
@@ -121,9 +140,7 @@ Disponível apenas para usuários com `funcao = administrador`. Três abas:
 
 - **Usuários** — tabela completa com edição inline de função, verificado e reputação; troca de senha sem precisar da atual; clique no nome exibe perfil detalhado com toda atividade no sistema
 - **Eventos** — todos os eventos (qualquer status), com edição e exclusão
-- **Métricas** — cards de totais e ranking de engajamento (score = reputação + eventos×10 + moderações×5 + itens na agenda×2)
-
-Todas as tabelas são ordenáveis por qualquer coluna.
+- **Métricas** — cards de totais e ranking de engajamento
 
 ## API principal
 
@@ -137,10 +154,8 @@ Eventos:
 - `GET /eventos`
 - `GET /eventos/:id`
 - `POST /eventos`
-- `PUT /eventos/:id/editar`
-- `DELETE /eventos/:id`
-- `POST /eventos/:id/aprovar`
-- `POST /eventos/:id/rejeitar`
+- `PUT /eventos/:id` — criador ou moderador
+- `DELETE /eventos/:id` — criador ou moderador
 - `POST /eventos/:id/denunciar`
 
 Artistas:
@@ -149,6 +164,7 @@ Artistas:
 - `GET /artistas/:id`
 - `POST /artistas`
 - `PUT /artistas/:id`
+- `POST /artistas/:id/solicitar-propriedade`
 
 Locais:
 
@@ -156,6 +172,7 @@ Locais:
 - `GET /locais/:id`
 - `POST /locais`
 - `PUT /locais/:id`
+- `POST /locais/:id/solicitar-propriedade`
 
 Agenda:
 
@@ -177,9 +194,14 @@ Usuários:
 
 Moderação:
 
-- `GET /eventos/moderacao/nao-moderados`
-- `GET /eventos/moderacao/locais`
-- `GET /eventos/moderacao/artistas`
+- `GET /moderacao/eventos`
+- `PUT /moderacao/eventos/:id/status`
+- `GET /moderacao/locais`
+- `GET /moderacao/artistas`
+- `PUT /moderacao/locais/:id/dono`
+- `PUT /moderacao/artistas/:id/dono`
+- `GET /moderacao/solicitacoes`
+- `PUT /moderacao/solicitacoes/:id`
 
 Admin (requer `funcao = administrador`):
 
@@ -236,8 +258,6 @@ Quando o schema muda (novos campos, novas tabelas), use o script de migração p
 docker compose exec backend npm run db:migrar
 
 # VPS
-ssh root@SEU_IP
-cd /opt/agenda-cultural
 docker compose -f docker-compose.prod.yml --env-file .env.prod exec backend npm run db:migrar
 ```
 
@@ -346,7 +366,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 ### 4. Inicializar o banco (primeira vez)
 
 ```bash
-docker compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec backend npx prisma db push
 docker compose -f docker-compose.prod.yml exec backend npm run prisma:seed
 ```
 
@@ -401,5 +421,5 @@ Para adicionar perfis: use o formulário na própria página `/instagram` ou edi
 
 - O endpoint `.ics` é compatível com Google Calendar, Apple Calendar e Outlook.
 - A agenda pessoal referencia eventos existentes (`agenda_eventos`), sem duplicação de evento.
-- Todos os horários são armazenados em UTC no banco e exibidos no fuso de Recife (UTC-3).
-- A extração por IA usa `gpt-4o-mini` (OpenAI) — barato e suficiente para extração de texto estruturado.
+- Todos os horários são armazenados em UTC no banco e exibidos no fuso de Recife (UTC-3). Datas de eventos usam meia-noite UTC; o highlight de "hoje" no calendário usa o fuso de Recife.
+- A extração por IA usa `gpt-4o-mini` (OpenAI) — barato e suficiente para extração de texto estruturado. A data atual é enviada como contexto para inferência correta do ano.
