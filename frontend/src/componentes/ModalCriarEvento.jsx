@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../servicos/api';
 
 export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCriado }) {
@@ -155,12 +155,14 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
     }
   }
 
-  function handleBackdrop(e) {
-    if (e.target === e.currentTarget) onFechar();
-  }
+  const mousedownAlvo = useRef(null);
 
   return (
-    <div className="modal-overlay" onClick={handleBackdrop}>
+    <div
+      className="modal-overlay"
+      onMouseDown={(e) => { mousedownAlvo.current = e.target; }}
+      onClick={(e) => { if (e.target === e.currentTarget && mousedownAlvo.current === e.currentTarget) onFechar(); }}
+    >
       <div className="modal-conteudo">
         <div className="modal-topo">
           <h2>Criar evento</h2>

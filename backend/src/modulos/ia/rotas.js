@@ -28,7 +28,8 @@ Regras:
 - Para o campo descricao, use o texto original do evento adaptado, sem hashtags e sem mencionar preços ou links
 - nomeArtista: apenas o nome principal do artista/grupo (se houver vários, o mais destacado)
 - nomeLocal: nome do espaço/venue (teatro, casa de shows, bar, etc)
-- Nunca invente informações que não estejam no texto`;
+- Nunca invente informações que não estejam no texto
+- A primeira linha da mensagem do usuário contém a data atual. Use-a para inferir o ano correto quando o texto não mencionar o ano explicitamente. Nunca use um ano anterior à data atual`;
 
 async function chamarOpenAI(texto) {
   if (!openaiKey) {
@@ -95,7 +96,12 @@ router.post('/ia/extrair-evento', async (req, res, next) => {
       return res.status(400).json({ erro: 'Campo "texto" é obrigatório.' });
     }
 
-    const extraido = await chamarOpenAI(texto.trim());
+    const hoje = new Date().toLocaleDateString('pt-BR', {
+      timeZone: 'America/Recife',
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+    const textoComContexto = `Data atual: ${hoje}\n\n${texto.trim()}`;
+    const extraido = await chamarOpenAI(textoComContexto);
 
     const [locaisEncontrados, artistasEncontrados] = await Promise.all([
       buscarLocalExistente(extraido.nomeLocal),

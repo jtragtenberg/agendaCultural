@@ -20,12 +20,11 @@ function chaveData(ano, mes, dia) {
   return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
-// Retifica a data para o fuso de Recife (UTC-3)
+// Eventos são salvos como meia-noite UTC (ex: 2026-04-24T00:00:00.000Z).
+// Usar getUTC* é correto — não aplicar offset de Recife aqui.
 function dataParaChave(dataEntrada) {
   const d = new Date(dataEntrada);
-  // UTC-3: subtrai 3h antes de extrair ano/mês/dia
-  const recife = new Date(d.getTime() - 3 * 60 * 60 * 1000);
-  return `${recife.getUTCFullYear()}-${String(recife.getUTCMonth() + 1).padStart(2, '0')}-${String(recife.getUTCDate()).padStart(2, '0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
 // "hoje" no fuso de Recife
