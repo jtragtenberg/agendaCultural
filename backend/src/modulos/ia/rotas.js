@@ -44,7 +44,7 @@ Regras:
 - descricao: escreva com suas próprias palavras — nunca copie frases do texto de origem. Evite linguagem publicitária ("não perca!", "imperdível", "venha curtir"), chamadas cômicas ou irônicas. Use tom descritivo e informativo. O texto deve deixar claro: o que é o evento, quem se apresenta, qual o estilo musical (se mencionado), e se faz parte de uma série ou evento maior (se mencionado). Se houver informações sobre o/a artista (estilo, influências, trajetória), inclua de forma resumida e natural. Sem hashtags, sem preços, sem links
 - ingresso: texto descritivo do valor (ex: "Gratuito", "R$ 30", "R$ 20 a R$ 50", "Couvert artístico")
 - linkIngresso: URL para compra de ingresso, se mencionado
-- linkDivulgacao: URL de divulgação do evento (Instagram, site, etc), se mencionado
+- linkDivulgacao: URL do próprio post de divulgação do evento (Instagram, site, etc), se mencionado — não confundir com perfil de artista ou local
 - artistas: todos os artistas/grupos que se apresentam no evento (não o local/espaço). Para cada um, extraia o nome artístico, o @instagram se mencionado, e uma breve descrição baseada no texto
 - local.nome: nome do espaço/venue (teatro, casa de shows, bar, etc)
 - local.instagram: @handle do espaço, se mencionado
@@ -119,7 +119,6 @@ async function buscarArtistaNoBanco(nome) {
     take: 3,
     orderBy: { nome: 'asc' },
   });
-  // Retorna o mais próximo (primeiro resultado alphabetically among matches)
   return resultados[0] || null;
 }
 
@@ -149,11 +148,26 @@ async function buscarPostInstagram(url) {
   return resp.json();
 }
 
+// Busca perfil do Instagram via scraper (bio + link externo)
+async function buscarPerfilInstagram(handle) {
+  try {
+    const resp = await fetch(`${SCRAPER_URL}/perfil`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch {
+    return null;
+  }
+}
+
 // ── Rotas ─────────────────────────────────────────────────────────────────────
 
 // POST /ia/extrair-evento
 // Body: { texto?: string, urlInstagram?: string }
-// Requer autenticação (para poder criar artistas/locais com o ID do usuário)
 router.post('/ia/extrair-evento', autenticarObrigatorio, async (req, res, next) => {
   try {
     let { texto, urlInstagram } = req.body;
@@ -163,7 +177,6 @@ router.post('/ia/extrair-evento', autenticarObrigatorio, async (req, res, next) 
     if (urlInstagram && urlInstagram.trim()) {
       try {
         postData = await buscarPostInstagram(urlInstagram.trim());
-        // Monta o texto com todos os dados do post
         const perfis = [postData.handle, ...postData.colaboradores.map(c => c.handle)]
           .map(h => `@${h}`)
           .join(', ');
@@ -187,9 +200,9 @@ router.post('/ia/extrair-evento', autenticarObrigatorio, async (req, res, next) 
     // Garante que artistas é sempre array
     const artistasExtraidos = Array.isArray(extraido.artistas) ? extraido.artistas : [];
 
-    // Resolve artistas: separa encontrados no banco dos novos
+    // Separa artistas já no banco dos que precisam ser criados pelo usuário
     const artistasEncontrados = [];
-    const artistasNovos = [];
+    const artistasSugeridos = [];
 
     for (const a of artistasExtraidos) {
       if (!a.nome) continue;
@@ -197,16 +210,11 @@ router.post('/ia/extrair-evento', autenticarObrigatorio, async (req, res, next) 
       if (encontrado) {
         artistasEncontrados.push(encontrado);
       } else {
-        // Cria automaticamente com os dados extraídos
-        const criado = await prisma.artista.create({
-          data: {
-            nome: a.nome,
-            instagram: a.instagram || null,
-            descricao: a.descricao || null,
-            criadoPor: req.usuario.id,
-          },
+        artistasSugeridos.push({
+          nome: a.nome,
+          instagram: a.instagram || null,
+          descricao: a.descricao || null,
         });
-        artistasNovos.push(criado);
       }
     }
 
@@ -218,13 +226,19 @@ router.post('/ia/extrair-evento', autenticarObrigatorio, async (req, res, next) 
     if (localExtraido.nome) {
       localEncontrado = await buscarLocalNoBanco(localExtraido.nome);
 
-      // Se não encontrou no banco, busca endereço no Nominatim
       if (!localEncontrado) {
         enderecoSugerido = await buscarEndereco(
           localExtraido.nome,
           localExtraido.cidade || 'Recife'
         );
       }
+    }
+
+    // Se a legenda menciona "link na bio", tenta buscar o link externo do perfil do postador
+    let linkBio = null;
+    if (postData?.legenda && /link\s*(na|no|da|do|em)?\s*bio/i.test(postData.legenda)) {
+      const perfil = await buscarPerfilInstagram(postData.handle);
+      if (perfil?.linkBio) linkBio = perfil.linkBio;
     }
 
     res.json({
@@ -235,14 +249,14 @@ router.post('/ia/extrair-evento', autenticarObrigatorio, async (req, res, next) 
         horaInicio: extraido.horaInicio || null,
         horaFim: extraido.horaFim || null,
         ingresso: extraido.ingresso || null,
-        linkIngresso: extraido.linkIngresso || null,
+        linkIngresso: extraido.linkIngresso || linkBio || null,
         links: extraido.linkDivulgacao || null,
         local: localExtraido,
       },
-      // Artistas já resolvidos (encontrados + criados automaticamente)
-      artistasResolvidos: [...artistasEncontrados, ...artistasNovos],
-      // Metadados para o frontend saber quais foram criados agora
-      artistasCriados: artistasNovos.map(a => a.id),
+      // Artistas já encontrados no banco (auto-selecionados)
+      artistasEncontrados,
+      // Artistas extraídos mas não cadastrados — o frontend cria ao salvar o evento
+      artistasSugeridos,
       // Local encontrado no banco (se houver)
       localEncontrado: localEncontrado || null,
       // Sugestão de endereço do Nominatim (se local não foi encontrado no banco)

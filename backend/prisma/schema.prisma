@@ -50,6 +50,7 @@ model Usuario {
 model Local {
   id           String   @id @default(uuid()) @db.Uuid
   nome         String
+  instagram    String?
   endereco     String   @default("")
   bairro       String   @default("")
   cidade       String   @default("Recife")

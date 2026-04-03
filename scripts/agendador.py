@@ -121,6 +121,44 @@ def buscar_post():
         return jsonify({"erro": str(e)}), 500
 
 
+@app.route("/perfil", methods=["POST"])
+def buscar_perfil():
+    """Busca dados de um perfil do Instagram pelo handle."""
+    dados = request.get_json() or {}
+    handle = (dados.get("handle") or "").strip().lstrip("@")
+    if not handle:
+        return jsonify({"erro": "handle é obrigatório."}), 400
+
+    arquivos = sorted(glob.glob(os.path.join(SESSAO_DIR, "sessao-*")))
+    if not arquivos:
+        return jsonify({"erro": "Nenhuma sessão do Instagram encontrada."}), 503
+
+    usuario = os.path.basename(arquivos[-1]).replace("sessao-", "")
+    L = instaloader.Instaloader(
+        download_pictures=False,
+        download_videos=False,
+        download_video_thumbnails=False,
+        download_geotags=False,
+        download_comments=False,
+        save_metadata=False,
+        quiet=True,
+    )
+    L.load_session_from_file(usuario, arquivos[-1])
+
+    try:
+        perfil = instaloader.Profile.from_username(L.context, handle)
+        return jsonify({
+            "handle": perfil.username,
+            "nome": perfil.full_name or None,
+            "bio": perfil.biography or None,
+            "linkBio": perfil.external_url or None,
+        })
+    except instaloader.exceptions.LoginRequiredException:
+        return jsonify({"erro": "Sessão expirada. Faça login novamente."}), 503
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
 @app.route("/buscar", methods=["POST"])
 def iniciar_busca():
     threading.Thread(target=rodar_scraper, daemon=True).start()
