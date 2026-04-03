@@ -4,6 +4,8 @@ import { api } from '../servicos/api';
 export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCriado }) {
   const [erro, setErro] = useState('');
 
+  // Extração por IA
+  const [urlInstagram, setUrlInstagram] = useState('');
   const [textoIa, setTextoIa] = useState('');
   const [extraindoIa, setExtraindoIa] = useState(false);
   const [erroIa, setErroIa] = useState('');
@@ -31,24 +33,19 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
   const [buscaArtista, setBuscaArtista] = useState('');
   const [sugestoesArtistas, setSugestoesArtistas] = useState([]);
   const [artistasSelecionados, setArtistasSelecionados] = useState([]);
-  const [novoArtistaNome, setNovoArtistaNome] = useState('');
   const [criandoArtista, setCriandoArtista] = useState(false);
 
   useEffect(() => {
     const termo = buscaLocal.trim();
     if (termo.length < 2 || formulario.localId) { setSugestoesLocais([]); return; }
-    const t = setTimeout(() => {
-      api.listarLocais(termo).then(setSugestoesLocais).catch(() => {});
-    }, 250);
+    const t = setTimeout(() => api.listarLocais(termo).then(setSugestoesLocais).catch(() => {}), 250);
     return () => clearTimeout(t);
   }, [buscaLocal, formulario.localId]);
 
   useEffect(() => {
     const termo = buscaArtista.trim();
     if (termo.length < 2) { setSugestoesArtistas([]); return; }
-    const t = setTimeout(() => {
-      api.listarArtistas(termo).then(setSugestoesArtistas).catch(() => {});
-    }, 250);
+    const t = setTimeout(() => api.listarArtistas(termo).then(setSugestoesArtistas).catch(() => {}), 250);
     return () => clearTimeout(t);
   }, [buscaArtista]);
 
@@ -70,7 +67,6 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
     setArtistasSelecionados((ant) => [...ant, artista]);
     setBuscaArtista('');
     setSugestoesArtistas([]);
-    setNovoArtistaNome('');
   }
 
   async function criarLocal() {
@@ -80,24 +76,82 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
     try {
       const criado = await api.criarLocal({ nome }, token);
       selecionarLocal(criado);
-    } catch (e) {
-      setErro(e.message);
-    } finally {
-      setCriandoLocal(false);
-    }
+    } catch (e) { setErro(e.message); }
+    finally { setCriandoLocal(false); }
   }
 
   async function criarArtista() {
-    const nome = novoArtistaNome.trim() || buscaArtista.trim();
+    const nome = buscaArtista.trim();
     if (!nome) { setErro('Digite o nome do artista.'); return; }
     setCriandoArtista(true);
     try {
       const criado = await api.criarArtista({ nome }, token);
       adicionarArtista(criado);
+    } catch (e) { setErro(e.message); }
+    finally { setCriandoArtista(false); }
+  }
+
+  async function extrairComIa() {
+    const temUrl = urlInstagram.trim().length > 0;
+    const temTexto = textoIa.trim().length > 0;
+    if (!temUrl && !temTexto) return;
+
+    setExtraindoIa(true);
+    setErroIa('');
+    try {
+      const payload = temUrl
+        ? { urlInstagram: urlInstagram.trim(), texto: textoIa.trim() || undefined }
+        : { texto: textoIa.trim() };
+
+      const { extraido, artistasResolvidos, localEncontrado, enderecoSugerido, postInstagram } =
+        await api.extrairEvento(payload, token);
+
+      // Preenche campos do formulário
+      setFormulario((ant) => ({
+        ...ant,
+        titulo: extraido.titulo || ant.titulo,
+        descricao: extraido.descricao || ant.descricao,
+        data: extraido.data || ant.data,
+        horaInicio: extraido.horaInicio || ant.horaInicio,
+        horaFim: extraido.horaFim || ant.horaFim,
+        ingresso: extraido.ingresso || ant.ingresso,
+        linkIngresso: extraido.linkIngresso || ant.linkIngresso,
+        links: extraido.links || ant.links,
+        imagemUrl: postInstagram?.thumbnail || ant.imagemUrl,
+      }));
+
+      // Preenche artistas (já resolvidos/criados pelo backend)
+      if (artistasResolvidos && artistasResolvidos.length > 0) {
+        setArtistasSelecionados(artistasResolvidos);
+      }
+
+      // Preenche local
+      if (localEncontrado) {
+        selecionarLocal(localEncontrado);
+      } else if (extraido.local?.nome) {
+        // Sugere o nome e, se disponível, preenche endereço do Nominatim
+        const nomeLocal = extraido.local.nome;
+        setBuscaLocal(nomeLocal);
+        setNovoLocalNome(nomeLocal);
+        // Se o Nominatim encontrou, cria o local automaticamente
+        if (enderecoSugerido) {
+          setCriandoLocal(true);
+          try {
+            const criado = await api.criarLocal({
+              nome: nomeLocal,
+              endereco: enderecoSugerido.rua || '',
+              bairro: enderecoSugerido.bairro || extraido.local.bairro || '',
+              cidade: enderecoSugerido.cidade || extraido.local.cidade || 'Recife',
+            }, token);
+            selecionarLocal(criado);
+          } catch { /* deixa o usuário criar manualmente */ }
+          finally { setCriandoLocal(false); }
+        }
+      }
     } catch (e) {
-      setErro(e.message);
+      setErroIa(e.message);
     } finally {
-      setCriandoArtista(false);
+      setExtraindoIa(false);
     }
   }
 
@@ -113,46 +167,7 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
         data: `${formulario.data}T00:00:00.000Z`,
       }, token);
       onEventoCriado();
-    } catch (e) {
-      setErro(e.message);
-    }
-  }
-
-  async function extrairComIa() {
-    if (!textoIa.trim()) return;
-    setExtraindoIa(true);
-    setErroIa('');
-    try {
-      const { extraido, locaisEncontrados, artistasEncontrados } = await api.extrairEvento(textoIa);
-
-      setFormulario((ant) => ({
-        ...ant,
-        titulo: extraido.titulo || ant.titulo,
-        descricao: extraido.descricao || ant.descricao,
-        data: extraido.data || ant.data,
-        horaInicio: extraido.horaInicio || ant.horaInicio,
-        horaFim: extraido.horaFim || ant.horaFim,
-        ingresso: extraido.ingresso || ant.ingresso,
-      }));
-
-      if (locaisEncontrados.length > 0) {
-        selecionarLocal(locaisEncontrados[0]);
-      } else if (extraido.nomeLocal) {
-        setNovoLocalNome(extraido.nomeLocal);
-        setBuscaLocal(extraido.nomeLocal);
-      }
-
-      if (artistasEncontrados.length > 0) {
-        adicionarArtista(artistasEncontrados[0]);
-      } else if (extraido.nomeArtista) {
-        setNovoArtistaNome(extraido.nomeArtista);
-        setBuscaArtista(extraido.nomeArtista);
-      }
-    } catch (e) {
-      setErroIa(e.message);
-    } finally {
-      setExtraindoIa(false);
-    }
+    } catch (e) { setErro(e.message); }
   }
 
   const mousedownAlvo = useRef(null);
@@ -170,16 +185,32 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
         </div>
 
         <form onSubmit={enviar} className="formulario">
+
+          {/* ── Extração por IA ── */}
           <div className="ia-extracao">
-            <label htmlFor="ia-texto">Extrair com IA</label>
+            <label htmlFor="ia-url">Link do post do Instagram</label>
+            <input
+              id="ia-url"
+              value={urlInstagram}
+              onChange={(e) => setUrlInstagram(e.target.value)}
+              placeholder="https://www.instagram.com/p/..."
+              autoComplete="off"
+            />
+
+            <label htmlFor="ia-texto">Ou cole o texto do evento</label>
             <textarea
               id="ia-texto"
               value={textoIa}
               onChange={(e) => setTextoIa(e.target.value)}
-              placeholder="Cole aqui a descrição do evento (post do Instagram, notícia, texto curto)..."
+              placeholder="Cole aqui a descrição do evento (legenda do post, notícia, texto curto)..."
               rows={3}
             />
-            <button type="button" onClick={extrairComIa} disabled={extraindoIa || !textoIa.trim()}>
+
+            <button
+              type="button"
+              onClick={extrairComIa}
+              disabled={extraindoIa || (!urlInstagram.trim() && !textoIa.trim())}
+            >
               {extraindoIa ? 'Extraindo...' : 'Preencher formulário com IA'}
             </button>
             {erroIa ? <p className="erro">{erroIa}</p> : null}
@@ -187,6 +218,7 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
 
           <hr className="ia-divisor" />
 
+          {/* ── Campos do evento ── */}
           <label>
             Título
             <input value={formulario.titulo} onChange={(e) => alterar('titulo', e.target.value)} required />
@@ -233,22 +265,20 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
             <input value={formulario.imagemUrl} onChange={(e) => alterar('imagemUrl', e.target.value)} placeholder="https://..." />
           </label>
 
-          {/* LOCAL */}
+          {/* ── Local ── */}
           <div className="campo-autocomplete">
             <label htmlFor="modal-busca-local">Local</label>
             <input
               id="modal-busca-local"
               value={buscaLocal}
-              onChange={(e) => { setBuscaLocal(e.target.value); setFormulario((a) => ({ ...a, localId: '' })); }}
+              onChange={(e) => { setBuscaLocal(e.target.value); setFormulario((a) => ({ ...a, localId: '' })); setNovoLocalNome(''); }}
               placeholder="Digite para buscar ou criar"
               autoComplete="off"
             />
             {formulario.localId ? (
               <p className="sucesso" style={{ margin: '0.2rem 0' }}>
                 Local selecionado.{' '}
-                <button type="button" onClick={() => { setFormulario((a) => ({ ...a, localId: '' })); setBuscaLocal(''); }}>
-                  Trocar
-                </button>
+                <button type="button" onClick={() => { setFormulario((a) => ({ ...a, localId: '' })); setBuscaLocal(''); }}>Trocar</button>
               </p>
             ) : (
               <>
@@ -272,7 +302,7 @@ export default function ModalCriarEvento({ dataPre, token, onFechar, onEventoCri
             )}
           </div>
 
-          {/* ARTISTAS */}
+          {/* ── Artistas ── */}
           <div className="campo-autocomplete">
             <label htmlFor="modal-busca-artista">Artistas</label>
             <input
