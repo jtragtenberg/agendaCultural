@@ -65,7 +65,7 @@ def buscar_post():
         return jsonify({"erro": "url é obrigatório."}), 400
 
     # Extrai o shortcode da URL: /p/SHORTCODE/ ou /reel/SHORTCODE/
-    match = re.search(r"/(?:p|reel|tv)/([A-Za-z0-9_-]+)", url)
+    match = re.search(r"/(?:p|reels?|tv)/([A-Za-z0-9_-]+)", url)
     if not match:
         return jsonify({"erro": "URL do Instagram inválida."}), 400
     shortcode = match.group(1)
