@@ -13,8 +13,8 @@ rotas.post('/adicionar', autenticarObrigatorio, async (req, res) => {
     }
 
     const evento = await prisma.evento.findUnique({ where: { id: eventoId } });
-    if (!evento || evento.status !== 'aprovado') {
-      return res.status(404).json({ erro: 'Evento não encontrado ou não aprovado.' });
+    if (!evento || evento.status === 'rejeitado') {
+      return res.status(404).json({ erro: 'Evento não encontrado.' });
     }
 
     const agendaEvento = await prisma.agendaEvento.upsert({
