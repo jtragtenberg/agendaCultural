@@ -40,7 +40,8 @@ Regras:
 - data deve estar no formato YYYY-MM-DD
 - horaInicio e horaFim devem estar no formato HH:MM (24h)
 - Se o texto não mencionar data, deixe data null
-- descricao: texto original do evento adaptado, sem hashtags, sem mencionar preços ou links
+- titulo: se for um evento musical e houver informação sobre o/a artista ou o estilo, incorpore isso naturalmente no título (ex: "Noite de Bossa Nova com Ana Lima" em vez de só "Show no Bar X"). Se não houver contexto suficiente, use o título literal do evento
+- descricao: escreva com suas próprias palavras — nunca copie frases do texto de origem. Evite linguagem publicitária ("não perca!", "imperdível", "venha curtir"), chamadas cômicas ou irônicas. Use tom descritivo e informativo. O texto deve deixar claro: o que é o evento, quem se apresenta, qual o estilo musical (se mencionado), e se faz parte de uma série ou evento maior (se mencionado). Se houver informações sobre o/a artista (estilo, influências, trajetória), inclua de forma resumida e natural. Sem hashtags, sem preços, sem links
 - ingresso: texto descritivo do valor (ex: "Gratuito", "R$ 30", "R$ 20 a R$ 50", "Couvert artístico")
 - linkIngresso: URL para compra de ingresso, se mencionado
 - linkDivulgacao: URL de divulgação do evento (Instagram, site, etc), se mencionado
